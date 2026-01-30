@@ -1,0 +1,1 @@
+require("prototypes.pet_biter_variants")
