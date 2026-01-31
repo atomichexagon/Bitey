@@ -1,3 +1,6 @@
+-- TODO: Move some functions out of this file and clean it up.
+-- TODO: Add entity at spawn point to represent nest like rail remnants or similar.
+
 local debug = require("scripts.util.debug")
 local pet_state = require("scripts.core.pet_state")
 local position_util = require("scripts.util.position")
@@ -5,18 +8,9 @@ local pet_visuals = require("scripts.core.pet_visuals")
 local pet_growth = require("scripts.core.pet_growth")
 local pet_spawn = require("scripts.core.pet_spawn")
 
+local LC = require("scripts.constants.lifecycle") -- Pet lifecycle constants.
+
 local pet_lifecycle = {}
-
-local PET_FOLLOW_RADIUS = 5.0
-local FOLLOW_RADIUS_BY_TIER = {
-    ["pet-biter-baby"] = 2.0,
-    ["pet-biter-small"] = 3.0,
-    ["pet-biter-large"] = 5.0
-}
-
-local BONDING_HUNGER_THRESHOLD = 20
-local FOOD_SEARCH_RADIUS = 10
-local EAT_RADIUS = 2
 
 function pet_lifecycle.get_pet_entry(player_index)
     storage.biter_pet = storage.biter_pet or {}
@@ -43,7 +37,7 @@ local function find_nearest_fish(pet)
     -- Detect items on ground near pet.
     local items = surface.find_entities_filtered {
         position = pos,
-        radius = FOOD_SEARCH_RADIUS,
+        radius = LC.FOOD_SEARCH_RADIUS,
         type = "item-entity"
     }
 
@@ -82,7 +76,7 @@ local function handle_feeding_behavior(player_index, player, pet)
     local dy = pet.position.y - target.position.y
     local dist_sq = dx * dx + dy * dy
 
-    if dist_sq <= (EAT_RADIUS * EAT_RADIUS) then
+    if dist_sq <= (LC.EAT_RADIUS * LC.EAT_RADIUS) then
 
         -- Stop moving.
         pet.commandable.set_command {
@@ -94,8 +88,7 @@ local function handle_feeding_behavior(player_index, player, pet)
         local amount = target.stack.count
         target.destroy()
 
-        pet_state.add_hunger(player_index, -10)
-        pet_state.add_loyalty(player_index, 5)
+        pet_state.ate_food(player_index, pet)
         pet_state.set_feeding_target(player_index, nil)
         return true
     end
@@ -104,7 +97,7 @@ local function handle_feeding_behavior(player_index, player, pet)
     pet.commandable.set_command {
         type = defines.command.go_to_location,
         destination = target.position,
-        radius = EAT_RADIUS * 0.5,
+        radius = LC.EAT_RADIUS * 0.5,
         distraction = defines.distraction.none
     }
     return false
@@ -113,7 +106,6 @@ end
 function pet_lifecycle.on_tick(event)
     if (event.tick % 30) ~= 0 then return end
     if not storage.biter_pet then return end
-
     for player_index, entry in pairs(storage.biter_pet) do
         pet_lifecycle.process_pet(player_index, entry)
     end
@@ -127,7 +119,7 @@ function pet_lifecycle.process_pet(player_index, entry)
     if not pet then return end
 
     -- Update hunger value.
-    pet_state.tick_hunger(player_index)
+    pet_state.tick_pet_state(player_index, pet)
 
     -- Skip other behaviors if paused.
     if pet_lifecycle.handle_pause(player_index, entry, pet) then return end
@@ -173,7 +165,7 @@ end
 
 function pet_lifecycle.state_idle(player_index, player, pet, entry)
     local dist = position_util.distance(pet.position, player.position)
-    local radius = FOLLOW_RADIUS_BY_TIER[pet.name] or PET_FOLLOW_RADIUS
+    local radius = LC.FOLLOW_RADIUS_BY_TIER[pet.name] or LC.PET_FOLLOW_RADIUS
     if dist > radius then
         pet_state.set_state(player_index, "follow")
         return
@@ -250,16 +242,12 @@ function pet_lifecycle.state_seek_food(player_index, player, pet, entry)
 
     if ate then
         local hunger = pet_state.get_hunger(player_index)
-        if entry.is_orphaned and hunger < BONDING_HUNGER_THRESHOLD then
+        if entry.is_orphaned and hunger < LC.BONDING_HUNGER_THRESHOLD then
             entry.is_orphaned = false
             debug.info("pet_lifecycle",
                        "Pet is now unorphaned: entry.is_orphaned = " ..
                            tostring(entry.is_orphaned))
-            pet_visuals.show_pet_reaction(pet, "♥")
-        else
-			local opts = {color = {r = 1, g = 1, b = 0, a = 1.0}}
-            pet_visuals.show_pet_reaction(pet, "!", opts)
-        end
+		end
 
         -- Growth check happens immediately after eating.
         pet_growth.try_grow(player_index, entry)
@@ -271,7 +259,7 @@ function pet_lifecycle.state_seek_food(player_index, player, pet, entry)
     pet.commandable.set_command {
         type = defines.command.go_to_location,
         destination = target.position,
-        radius = EAT_RADIUS,
+        radius = LC.EAT_RADIUS,
         distraction = defines.distraction.none
     }
 end
@@ -307,7 +295,7 @@ function pet_lifecycle.state_follow(player_index, player, pet, entry)
 
     -- 2. Calculate distances
     local dist = position_util.distance(pet.position, target_pos)
-    local radius = FOLLOW_RADIUS_BY_TIER[pet.name] or PET_FOLLOW_RADIUS
+    local radius = LC.FOLLOW_RADIUS_BY_TIER[pet.name] or LC.PET_FOLLOW_RADIUS
 
     -- 3. If close enough, switch to idle
     if dist <= radius then

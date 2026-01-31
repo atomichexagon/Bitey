@@ -1,18 +1,13 @@
 local pet_state = require("scripts.core.pet_state")
 local debug = require("scripts.util.debug")
 
+local GC = require("scripts.constants.growth") -- Pet growth constants.
+
 local pet_growth = {}
-
-local PET_GROWTH_CHANCE = 0.25
-local BABY_TO_SMALL_THRESHOLD = 0.06
-local SMALL_TO_LARGE_THRESHOLD = 0.12
-
--- Growth tiers in order.
-local TIERS = {"pet-biter-baby", "pet-biter-small", "pet-biter-large"}
 
 -- Get current tier index.
 local function get_tier_index(name)
-    for i, tier in ipairs(TIERS) do if tier == name then return i end end
+    for i, tier in ipairs(GC.TIERS) do if tier == name then return i end end
     return 1
 end
 
@@ -56,7 +51,8 @@ function pet_growth.try_grow(player_index, entry)
 
     -- Baby to Small biter.
     if current == "pet-biter-baby" then
-        if evo > BABY_TO_SMALL_THRESHOLD and math.random() < PET_GROWTH_CHANCE then
+        if evo > GC.BABY_TO_SMALL_THRESHOLD and math.random() <
+            GC.PET_GROWTH_CHANCE then
             upgrade_pet(entry, "pet-biter-small")
             entry.biter_tier = "pet-biter-small"
         end
@@ -65,7 +61,8 @@ function pet_growth.try_grow(player_index, entry)
 
     -- Small to Large biter.
     if current == "pet-biter-small" then
-        if evo > SMALL_TO_LARGE_THRESHOLD and math.random() < PET_GROWTH_CHANCE then
+        if evo > GC.SMALL_TO_LARGE_THRESHOLD and math.random() <
+            GC.PET_GROWTH_CHANCE then
             upgrade_pet(entry, "pet-biter-large")
             entry.biter_tier = "pet-biter-large"
         end

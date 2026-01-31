@@ -1,0 +1,7 @@
+return {
+    EMOTE_DURATION = 60,
+    EMOTE_SCALE = 0.4,
+    EMOTE_DRIFT_RATE = 0.004,
+    EMOTE_FADE_RATE = 0.02,
+	EMOTE_SCALE_RATE = 0.001
+}

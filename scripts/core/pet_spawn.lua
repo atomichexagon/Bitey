@@ -1,21 +1,14 @@
 local debug = require("scripts.util.debug")
 
+local SC = require("scripts.constants.spawn") -- Pet spawn constants.
+
 local pet_spawn = {}
 
-local SPAWN_SEARCH_RADIUS = 5
-local SEARCH_PRECISION = 0.5
-
--- Look offscreen but stay within loaded chunks.
-local MINIMUM_SPAWN_DISTANCE = 32
-local MAXIMUM_SPAWN_OFFSET = 8
-
-local TICKS_PER_DAY = 25200 -- Standard day length on Nauvis.
-
 function pet_spawn.choose_orphan_spawn(surface, origin)
-    for i = 1, 30 do
+    for i = 1, 60 do
         local angle = math.random() * math.pi * 2
-        local dist = MINIMUM_SPAWN_DISTANCE +
-                         math.random(0, MAXIMUM_SPAWN_OFFSET)
+        local dist = SC.MINIMUM_SPAWN_DISTANCE + math.random() ^ 0.5 *
+                         SC.MAXIMUM_SPAWN_OFFSET
 
         local pos = {
             x = origin.x + math.cos(angle) * dist,
@@ -28,8 +21,8 @@ function pet_spawn.choose_orphan_spawn(surface, origin)
 
                 -- Attempt to find a valid spot for the baby biter.
                 local valid = surface.find_non_colliding_position(
-                                  "pet-biter-baby", pos, SPAWN_SEARCH_RADIUS,
-                                  SEARCH_PRECISION)
+                                  "pet-biter-baby", pos, SC.SPAWN_SEARCH_RADIUS,
+                                  SC.SEARCH_PRECISION)
 
                 if valid then return valid end
             end
@@ -104,11 +97,11 @@ function pet_spawn.spawn_pet_for_player(player, entry)
         entry.was_alive = false
 
         local last_death = entry.last_death_tick or 0
-        if (current_tick - last_death) >= TICKS_PER_DAY then
+        if (current_tick - last_death) >= SC.TICKS_PER_DAY then
             pet_spawn.spawn_orphan_baby(player, entry)
             entry.was_alive = true
         else
-            local remaining = math.floor((TICKS_PER_DAY -
+            local remaining = math.floor((SC.TICKS_PER_DAY -
                                              (current_tick - last_death)) / 60)
             debug.info("pet_spawn",
                        "Waiting for next spawn cycle. Seconds remaining: " ..

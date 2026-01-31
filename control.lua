@@ -3,6 +3,8 @@ local debug = require("scripts.util.debug")
 local pet_lifecycle = require("scripts.core.pet_lifecycle")
 local pet_state = require("scripts.core.pet_state")
 
+local VC = require("scripts.constants.visuals") -- Visuals constants.
+
 -- Console commands.
 commands.add_command("petstatus", "Show pet status for the calling player.",
                      function(cmd)
@@ -26,10 +28,18 @@ commands.add_command("petdebuglevel", "Set debug level.", function(cmd)
     end
 end)
 
-script.on_init(function() events.on_init() end)
+script.on_init(function()
+    events.on_init()
+    storage.last_mood = {}
+    storage.emote_state = {}
+end)
+
 script.on_load(function() events.on_load() end)
+
 script.on_configuration_changed(function(cfg)
     events.on_configuration_changed(cfg)
+    storage.last_mood = storage.last_mood or {}
+    storage.emote_state = storage.emote_state or {}
 end)
 
 -- Event wiring
@@ -56,7 +66,7 @@ script.on_event(defines.events.on_tick, function(event)
             -- Drift and scale.
             local offset = {0, -0.5 - (age * r.drift)}
             r.id.target = {entity = r.pet, offset = offset}
-            r.id.scale = r.id.scale + 0.01
+            r.id.scale = r.id.scale + VC.EMOTE_SCALE_RATE
 
             -- Fade out text.
             local new_alpha = math.max(0, r.color.a - age * r.fade)
