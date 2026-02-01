@@ -2,19 +2,6 @@ require("prototypes.pet_biter_variants")
 
 data:extend({
 	{
-		type = "font",
-		name = "biter-pet-emotes",
-		from = "biter-pet-emotes",
-		size = 32,
-		border = true,
-		border_color = {
-			0,
-			0,
-			0
-		},
-		filtered = true
-	},
-	{
 		type = "sound",
 		name = "biter-roar",
 		variations = sound_variations("__base__/sound/creatures/biter-roar", 6)
