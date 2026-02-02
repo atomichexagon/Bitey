@@ -96,7 +96,7 @@ local function handle_feeding_behavior(player_index, player, pet, entry)
 		local amount = target.stack.count
 		target.destroy()
 
-		pet_state.ate_food(player_index, player, pet, entry)
+		pet_state.ate_food(player_index, entry)
 		pet_state.set_feeding_target(player_index, nil)
 		return true
 	end

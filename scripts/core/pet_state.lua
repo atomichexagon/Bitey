@@ -1,4 +1,5 @@
 -- TODO: Have boredom slowly increase if the pet is not orphaned.
+-- TODO: Implement thirst.
 local debug = require("scripts.util.debug")
 local pet_visuals = require("scripts.core.pet_visuals")
 
@@ -74,7 +75,7 @@ function pet_state.queue_emote(player_index, pet, emote)
 	end
 end
 
-function pet_state.force_emote(player_index, pet, entry, emote)
+function pet_state.force_emote(player_index, entry, emote)
 	local es = ensure_queue(player_index)
 	local now = game.tick
 
@@ -87,9 +88,7 @@ function pet_state.force_emote(player_index, pet, entry, emote)
 	-- Clear current emote queue.
 	es.queue = {}
 
-	if pet and pet.valid then
-		pet_visuals.emote(player_index, entry, emote, true)
-	end
+	pet_visuals.emote(player_index, entry, emote)
 end
 
 local function tick_emotes(player_index, entry)
@@ -114,7 +113,7 @@ local function tick_emotes(player_index, entry)
 		table.remove(es.queue, 1)
 
 		-- TODO: Need these quoted variables passed.
-		local render_id = pet_visuals.emote(player_index, entry, next_emote, true)
+		local render_id = pet_visuals.emote(player_index, entry, next_emote)
 		es.render_id = render_id
 		es.active_emote = next_emote
 		es.ends_at_tick = now + (EMOTE_DURATION or 60)
@@ -288,12 +287,10 @@ function pet_state.get_feeding_target(player_index)
 	return s.feeding_target
 end
 
-function pet_state.ate_food(player_index, player, pet, entry, emote, food_value)
-	local e = emote or "love"
-	local fv = food_value or HC.HUNGER_DEFAULT_FOOD_VALUE
-
+function pet_state.ate_food(player_index, entry, food_value)
+	local emote = "love"
+	local fv = food_value or FC.FOOD_DEFAULT_SATIATION_VALUE
 	local s = ensure_state(player_index)
-
 	local satiation_mood_modifier = math.floor((s.hunger ^ 1.2) * 0.05)
 
 	s.hunger = math.max(0, math.min(100, s.hunger - fv))
@@ -301,7 +298,7 @@ function pet_state.ate_food(player_index, player, pet, entry, emote, food_value)
 	s.sadness = math.max(0, s.sadness - FC.FOOD_SADNESS_MODIFIER - satiation_mood_modifier)
 	s.boredom = math.max(0, s.boredom - FC.FOOD_BOREDOM_MODIFIER - satiation_mood_modifier)
 
-	pet_state.force_emote(player_index, player, pet, entry, e)
+	pet_state.force_emote(player_index, entry, emote)
 end
 
 -- Boredom functions.

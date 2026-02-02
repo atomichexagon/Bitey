@@ -11,8 +11,8 @@ dbg.level = {
 	trace = 4
 }
 
--- Default level (change this to control verbosity).
-dbg.current_level = dbg.level.trace
+-- Default debug level.
+dbg.current_level = dbg.level.error
 
 local last_print_tick = {}
 
