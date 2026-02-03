@@ -12,7 +12,7 @@ dbg.level = {
 }
 
 -- Default debug level.
-dbg.current_level = dbg.level.error
+dbg.current_level = dbg.level.trace
 
 local last_print_tick = {}
 
@@ -36,27 +36,28 @@ local function safe_print(key, msg)
 end
 
 local function get_caller_module()
+	-- Get the source path of this file to avoid reporting own functions.
+	local self_source = debug.getinfo(1, "S").source
+
+	-- Iterate up the call stack. Start at level 3 to skip debug.getinfo and this function.
 	local level = 3
 	while true do
 		local info = debug.getinfo(level, "Sln")
+
+		-- If we're past the end of the call stack, we can't find a suitable caller.
 		if not info then
-			return {
-				filename = "unknown",
-				func = "?"
-			}
+			return { filename = "unknown", func = "?" }
 		end
 
-		-- Only accept Lua source files (start with "@")
-		if info.source and info.source:sub(1, 1) == "@" then
+		-- Looking for frame that comes from a loaded Lua file outside this module.
+		if info.source and info.source:sub(1, 1) == "@" and info.source ~= self_source then
 			local filename = info.source:match("([^/\\]+)$") or info.source
 			filename = filename:gsub("%.lua$", "")
-			local func = info.name or "?"
-			return {
-				filename = filename,
-				func = func
-			}
+			local func_name = info.name or "?"
+			return { filename = filename, func = func_name }
 		end
 
+		-- Wrong frame, move up the stack.
 		level = level + 1
 	end
 end

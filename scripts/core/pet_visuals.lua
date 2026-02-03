@@ -102,39 +102,28 @@ local EMOTE_MAP = {
 	}
 }
 
-function pet_visuals.emote(player_index, entry, emote, play_audio)
-	local pa = play_audio or true
+function pet_visuals.emote(player_index, entry, emote, forced)
+	local forced = forced or false
 	local pet = entry.unit
 	local data = EMOTE_MAP[emote]
 	local sprite = (data and data.sprite) or emote
 
-	local sprite_render = pet_visuals.show_pet_reaction(player_index, entry, sprite)
+	local sprite_render = pet_visuals.show_pet_reaction(player_index, entry, sprite, forced)
 
-	if pa then
-		-- Assuming pet_audio handles its own player scope as discussed earlier
-		pet_audio.play_for_size(player_index, entry)
-	end
+	pet_audio.play_for_size(player_index, entry)
 
 	return sprite_render
 end
 
-function pet_visuals.show_pet_reaction(player_index, entry, sprite)
-	-- debug.error("=== ENTRY TRACE START ===")
-	-- debug.error("ENTRY TYPE: " .. type(entry))
-	-- debug.error("ENTRY CONTENTS:\n" .. serpent.block(entry))
-	-- debug.error("ENTRY.UNIT TYPE: " .. type(entry.unit))
-	-- if entry.unit then
-	-- 	debug.error("ENTRY.UNIT VALID: " .. tostring(entry.unit.valid))
-	-- 	debug.error("ENTRY.UNIT.NAME: " .. tostring(entry.unit.name))
-	-- 	debug.error("ENTRY.UNIT.SURFACE TYPE: " .. type(entry.unit.surface))
-	-- end
-	-- debug.error("=== ENTRY TRACE END ===")
-
+function pet_visuals.show_pet_reaction(player_index, entry, sprite, forced)
 	if not (entry and entry.unit and entry.unit.valid) then
 		return
 	end
 
 	local pet = entry.unit
+	if not (pet and pet.valid) then
+		return
+	end
 
 	local target = {
 		entity = pet,
@@ -144,7 +133,7 @@ function pet_visuals.show_pet_reaction(player_index, entry, sprite)
 	local sprite_id = rendering.draw_sprite {
 		sprite = sprite,
 		target = target,
-		surface = entry.surface,
+		surface = pet.surface,
 		x_scale = VC.EMOTE_SCALE,
 		y_scale = VC.EMOTE_SCALE,
 		time_to_live = VC.TIME_TO_LIVE_FALLBACK
@@ -160,8 +149,8 @@ function pet_visuals.show_pet_reaction(player_index, entry, sprite)
 	}
 
 	local sprite_render = {
-		id = sprite_id,
-		light_id = light_id,
+		sprite = sprite_id,
+		light = light_id,
 		color = {
 			r = 1,
 			g = 1,
@@ -171,7 +160,8 @@ function pet_visuals.show_pet_reaction(player_index, entry, sprite)
 		start_tick = game.tick,
 		fade = VC.EMOTE_FADE_RATE,
 		player_index = player_index,
-		entry = entry
+		entry = entry,
+		forced = forced or false
 	}
 
 	storage.pet_emote_sprite_queue = storage.pet_emote_sprite_queue or {}

@@ -2,7 +2,6 @@ local debug = require("scripts.util.debug")
 local audio = {}
 
 function audio.play_pet_sound(player, entry, sound, volume)
-
 	local pet = entry.unit
 	if not (pet and pet.valid and player and player.valid and sound) then
 		return

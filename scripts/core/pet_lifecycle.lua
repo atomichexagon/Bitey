@@ -66,7 +66,6 @@ local function find_nearest_fish(pet)
 end
 
 local function handle_feeding_behavior(player_index, player, pet, entry)
-
 	local target = pet_state.get_feeding_target(player_index)
 	if not (target and target.valid) then
 		pet_state.set_feeding_target(player_index, nil)
@@ -215,7 +214,6 @@ function pet_lifecycle.is_player_valid(player)
 	return player and player.valid and player.character and player.character.valid
 end
 
--- I don't even remember why this function exists?
 function pet_lifecycle.ensure_pet(player_index, entry)
 	if not (entry.unit and entry.unit.valid) then
 		pet_spawn.spawn_pet_for_player(game.get_player(player_index), entry)

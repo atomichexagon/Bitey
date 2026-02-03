@@ -52,7 +52,7 @@ local function ensure_queue(player_index)
 			forced_queue = {},
 			active_emote = nil,
 			ends_at_tick = nil,
-			render_ids = nil
+			sprite_render = nil
 		}
 		storage.emote_state[player_index] = es
 	end
@@ -88,19 +88,17 @@ function pet_state.start_next_forced_emote(player_index, entry)
 		return
 	end
 
-	local sprite_render = pet_visuals.emote(player_index, entry, next_emote)
+	local sprite_render = pet_visuals.emote(player_index, entry, next_emote, true)
 	es.sprite_render = sprite_render
 	es.active_emote = next_emote
 	es.active_type = "forced"
-	-- TODO: Figure how long emote is and create constant.
-	-- es.ends_at_tick = game.tick + (EMOTE_DURATION or 60)
-	es.ends_at_tick = game.tick + 60
+	es.ends_at_tick = game.tick + 180 + VC.EMOTE_DURATION or 180
 end
 
 function pet_state.on_emote_finished(player_index, entry)
 	local es = ensure_queue(player_index)
 
-	-- If this was a forced emote, start the next one immediately
+	-- If this was a forced emote, start the next one immediately.
 	if es.active_type == "forced" then
 		es.active_emote = nil
 		es.active_type = nil
@@ -110,18 +108,20 @@ function pet_state.on_emote_finished(player_index, entry)
 		return
 	end
 
-	-- Otherwise, mood emotes will be handled by tick_emotes()
+	-- Otherwise, mood emotes will be handled by tick_emotes().
 end
 
 function pet_state.force_emote(player_index, entry, emote)
 	local es = ensure_queue(player_index)
 
-	-- Destroy any existing emote render.
-	if es.sprite_render then
-		local s_obj = rendering.get_object_by_id(es.sprite_render.id)
-		s_obj.destroy()
-		local l_obj = rendering.get_object_by_id(es.sprite_render.light_id)
-		l_obj.destroy()
+	-- Destroy any mood emote render to clear way for event-driven emote.
+	if (es.sprite_render and es.active_type ~= "forced") then
+		if es.sprite_render.sprite and es.sprite_render.sprite.valid then
+			es.sprite_render.sprite.destroy()
+		end
+		if es.sprite_render.light and es.sprite_render.light.valid then
+			es.sprite_render.light.destroy()
+		end
 		es.sprite_render = nil
 	end
 
@@ -135,12 +135,12 @@ function pet_state.force_emote(player_index, entry, emote)
 
 	-- If nothing is active, fire emote immediately.
 	if not es.active_type then
+		debug.info("Queuing next forced emote: " .. emote)
 		pet_state.start_next_forced_emote(player_index, entry)
 	end
 end
 
 local function tick_emotes(player_index, entry)
-	debug.trace("Processing pet emote for player: " .. player_index)
 	local es = ensure_queue(player_index)
 
 	local now = game.tick
@@ -151,7 +151,7 @@ local function tick_emotes(player_index, entry)
 			es.active_emote = nil
 			es.ends_at_tick = nil
 		else
-			return -- Emote active when emote active.
+			return
 		end
 	end
 
@@ -160,12 +160,10 @@ local function tick_emotes(player_index, entry)
 	if next_emote then
 		table.remove(es.queue, 1)
 
-		-- TODO: Need these quoted variables passed.
-		local render_id = pet_visuals.emote(player_index, entry, next_emote)
-		es.render_id = render_id
+		local sprite_render = pet_visuals.emote(player_index, entry, next_emote)
+		es.sprite_render = sprite_render
 		es.active_emote = next_emote
-		-- TODO: Create duration constant.
-		es.ends_at_tick = now + (EMOTE_DURATION or 60)
+		es.ends_at_tick = now + (VC.EMOTE_DURATION or 180)
 	end
 end
 
@@ -183,12 +181,14 @@ function pet_state.tick_pet_state(player_index, entry)
 
 		-- Update mood based on stats
 		s.mood = pet_state.calculate_mood(player_index)
-		debug.trace("Queuing next mood emote: " .. s.mood)
+		debug.info("Queuing next mood emote: " .. s.mood)
 		pet_state.queue_emote(player_index, pet, s.mood)
 
-		-- Add mood to emote queue.
-		tick_emotes(player_index, entry)
-
+		-- Add mood to queue if no forced emote is currently not active.
+		local es = ensure_queue(player_index)
+		if (es.active_type ~= "forced") then
+			tick_emotes(player_index, entry)
+		end
 	end
 end
 
