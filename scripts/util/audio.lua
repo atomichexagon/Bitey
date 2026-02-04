@@ -7,7 +7,7 @@ function audio.play_pet_sound(player, entry, sound, volume)
 		return
 	end
 
-	-- Plays biter audio local to the biter.
+	-- Play audio local to the biter.
 	player.play_sound {
 		path = sound,
 		position = pet.position,
@@ -21,7 +21,6 @@ function audio.play_global_sound(player, sound, volume)
 		return
 	end
 
-	-- Plays biter audio local to the biter.
 	player.play_sound {
 		path = sound,
 		volume_modifier = volume or 1.0

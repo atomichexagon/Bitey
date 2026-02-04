@@ -11,13 +11,13 @@ return {
 	ALERT = 40,
 	FOCUSED = 0,
 
-	-- Sadness thresholds.
-	DEPRESSED = 90,
-	SAD = 70,
-	HAPPY = 40,
-	OVERJOYED = 0,
+	-- Happiness thresholds.
+	OVERJOYED = 90,
+	HAPPY = 70,
+	SAD = 40,
+	DEPRESSED = 20,
 
-	-- Loyalty thresholds.
+	-- Friendship thresholds.
 	DEVOTED = 90,
 	LOYAL = 70,
 	FRIENDLY = 40,

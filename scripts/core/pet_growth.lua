@@ -51,10 +51,11 @@ function pet_growth.try_grow(player_index, entry)
 		return
 	end
 
+	-- Biter must meet hunger threshold before growth is triggered.
 	local hunger = pet_state.get_hunger(player_index) or 0
 	if hunger >= 15 then
 		return
-	end -- Biter must be well fed to grow.
+	end
 
 	local surface = pet.surface
 	local evo = game.forces.enemy.get_evolution_factor(surface)

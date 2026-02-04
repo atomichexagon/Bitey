@@ -74,7 +74,7 @@ local EMOTE_MAP = {
 	playing_dead = {
 		sprite = "playing-dead"
 	},
-	-- Sadness emotes.
+	-- Happiness emotes.
 	ecstatic = {
 		sprite = "ecstatic" -- Placeholder.
 	},
@@ -90,7 +90,7 @@ local EMOTE_MAP = {
 	very_sad = {
 		sprite = "very-sad" -- Placeholder.
 	},
-	-- Loyalty emotes.
+	-- Friendship emotes.
 	love = {
 		sprite = "virtual-signal/signal-heart"
 	},
@@ -118,6 +118,7 @@ function pet_visuals.emote(player_index, entry, emote, fast_render)
 end
 
 function pet_visuals.show_pet_reaction(player_index, entry, sprite, fast_render)
+	local fast_render = fast_render or false
 	if not (entry and entry.unit and entry.unit.valid) then
 		return
 	end
@@ -131,7 +132,11 @@ function pet_visuals.show_pet_reaction(player_index, entry, sprite, fast_render)
 		entity = pet,
 		offset = {0, VC.EMOTE_VERTICAL_OFFSET}
 	}
-	debug.info("Sprite: " .. sprite .. " - Fast render: " .. tostring(fast_render))
+	if fast_render then
+		debug.info("Fast render enabled for sprite [img=" .. sprite .. "].")
+	else
+		debug.info("Standard render enabled for sprite [img=" .. sprite .. "].")
+	end
 	local sprite_id = rendering.draw_sprite {
 		sprite = sprite,
 		target = target,

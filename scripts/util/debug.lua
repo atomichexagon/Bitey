@@ -1,14 +1,16 @@
+local text = require("scripts.util.text_format")
+
 local DC = require("scripts.constants.debug") -- Debug constants.
 
 local dbg = {}
 
 -- Debug levels.
 dbg.level = {
-	none = 0,
-	error = 1,
-	warn = 2,
+	trace = 4,
 	info = 3,
-	trace = 4
+	warn = 2,
+	error = 1,
+	none = 0
 }
 
 -- Default debug level.
@@ -29,7 +31,6 @@ local function safe_print(key, msg)
 
 	last_print_tick[key] = tick
 
-	-- Safe print (won't crash if game isn't ready).
 	if game and game.print then
 		game.print(msg)
 	end
@@ -39,25 +40,31 @@ local function get_caller_module()
 	-- Get the source path of this file to avoid reporting own functions.
 	local self_source = debug.getinfo(1, "S").source
 
-	-- Iterate up the call stack. Start at level 3 to skip debug.getinfo and this function.
+	-- Start at level 3 to skip debug.getinfo and this function and iterate up call stack.
 	local level = 3
 	while true do
 		local info = debug.getinfo(level, "Sln")
 
-		-- If we're past the end of the call stack, we can't find a suitable caller.
+		-- If we're past the end of the call stack then we can't find a suitable caller.
 		if not info then
-			return { filename = "unknown", func = "?" }
+			return {
+				filename = "unknown",
+				func = "?"
+			}
 		end
 
-		-- Looking for frame that comes from a loaded Lua file outside this module.
+		-- Looking for frame that comes from a loaded Lua file outside of this module.
 		if info.source and info.source:sub(1, 1) == "@" and info.source ~= self_source then
 			local filename = info.source:match("([^/\\]+)$") or info.source
 			filename = filename:gsub("%.lua$", "")
 			local func_name = info.name or "?"
-			return { filename = filename, func = func_name }
+			return {
+				filename = filename,
+				func = func_name
+			}
 		end
 
-		-- Wrong frame, move up the stack.
+		-- Move up the stack if wrong frame.
 		level = level + 1
 	end
 end
@@ -69,10 +76,12 @@ local function log(level, message)
 
 	local module_info = get_caller_module()
 	local tick = game and game.tick or 0
-	local prefix = string.format("%s[%s][%d][%s][%s] ", DC.MOD_ICON, (level == dbg.level.error and "ERROR") or (level == dbg.level.warn and "WARN") or
-			(level == dbg.level.info and "INFO") or "TRACE", tick, module_info.filename, module_info.func)
-
-	safe_print(module_info.filename, prefix .. tostring(message))
+	local formatted_prefix = string.format("%s %s %s.%s", DC.ICON,
+			(level == dbg.level.error and text.format("ERROR", "e")) or (level == dbg.level.warn and text.format("WARN", "w")) or
+					(level == dbg.level.info and text.format("INFO", "i")) or text.format("TRACE", "t"), text.format(module_info.filename, "c"), text.format(module_info.func .. "()", "f"))
+	local formatted_message = string.format("%s", text.format(message))
+	local assembled_console_line = string.format("%s %s", formatted_prefix, formatted_message)
+	safe_print(module_info.filename, assembled_console_line)
 end
 
 -- Public helpers.
@@ -92,10 +101,12 @@ function dbg.trace(message)
 	log(dbg.level.trace, message)
 end
 
--- Allow runtime toggling via /petdebuglevel console command.
+-- Allows debug level configuration via command console.
 function dbg.set_level(level)
 	dbg.current_level = level
-	dbg.info("debug", "Debug level set to " .. tostring(level))
+	local formatted_level = text.format(level, "f")
+	local formatted_message = string.format(text.format("Debug level set to [%s]"), level_string)	
+	dbg.info(formatted_message)
 end
 
 return dbg

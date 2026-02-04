@@ -1,5 +1,4 @@
 -- TODO: Move some functions out of this file and clean it up.
--- TODO: Add entity at spawn point to represent nest like rail remnants or similar.
 -- TODO: Map pet biter sizes to base game biter entities for notifications.
 -- TODO: Create pet_sounds.lua for audio tied to biter size.
 -- TODO: Add small random chance for biter to investigate entity and pause for a second or two. This should take precedence over everything else.
@@ -14,6 +13,7 @@ local notifications = require("scripts.util.notifications")
 local pet_events = require("scripts.core.pet_events")
 
 local LC = require("scripts.constants.lifecycle") -- Pet lifecycle constants.
+local BM = require("scripts.constants.biters") -- Pet tier to biter map.
 
 local pet_lifecycle = {}
 
@@ -235,7 +235,7 @@ function pet_lifecycle.handle_pause(player_index, entry, pet)
 
 	-- Still paused; skip all behaviors.
 	if paused_now then
-		debug.info("Paused: skipping movement.")
+		debug.info("Pet movement has paused.")
 		entry.was_paused = true
 		return true
 	end
@@ -244,7 +244,7 @@ function pet_lifecycle.handle_pause(player_index, entry, pet)
 	if was_paused and not paused_now then
 		entry.was_paused = false
 		pet_state.set_state(player_index, "idle")
-		debug.info("Unpaused: resuming movement.")
+		debug.info("Pet movement has resumed.")
 	end
 	return false
 end
@@ -257,10 +257,10 @@ local function check_for_adoption(player, player_index, pet, entry)
 		if math.random() < LC.CHANCE_TO_ADOPT_BITER then
 			entry.is_orphaned = false
 			pet.force = player.force
-			debug.info("Pet is now unorphaned: entry.is_orphaned = " .. tostring(entry.is_orphaned))
+			debug.info("Pet is now unorphaned.")
 			notifications.notify(player, pet, {
 				type = "entity",
-				name = "small-biter"
+				name = BM[entry.biter_tier_friendly_name].game_eq
 			}, "It seems attached to you now.", "utility/achievement_unlocked")
 			return true
 		end
@@ -350,7 +350,7 @@ function pet_lifecycle.on_entity_died(event)
 
 	for player_index, entry in pairs(storage.biter_pet) do
 		if entry.unit == entity then
-			debug.info("The pet seems to have died.");
+			debug.info("Pet death event has been triggered.");
 			entry.unit = nil
 			entry.was_alive = false
 			entry.last_death_tick = game.tick -- Record the time of death
@@ -359,8 +359,8 @@ function pet_lifecycle.on_entity_died(event)
 			if player then
 				notifications.notify(player, pet, {
 					type = "entity",
-					name = "small-biter"
-				}, "Your loyal companion has died. Perhaps a new one friend may appear one day.", "utility/achievement_unlocked")
+					name = BM[entry.biter_tier_friendly_name].game_eq
+				}, "Your faithful companion has died. Perhaps a new friend may appear one day.", "utility/achievement_unlocked")
 			end
 			break
 		end

@@ -2,6 +2,7 @@
 -- TODO: Implement thirst.
 local debug = require("scripts.util.debug")
 local pet_visuals = require("scripts.core.pet_visuals")
+local text = require("scripts.util.text_format")
 
 local HC = require("scripts.constants.hunger") -- Hunger constants.
 local FC = require("scripts.constants.food") -- Food constants.
@@ -15,27 +16,29 @@ local function ensure_state(player_index)
 	storage.pet_state = storage.pet_state or {}
 	local s = storage.pet_state[player_index]
 
-	-- TODO: Change sadness to happiness and alter constants to reflect reversal.
-	-- TODO: Change loyalty to friendship, as it will be more applicable to future features.
-	-- TODO: Add evolution value.
-	-- TODO: Add morph value.
+	-- TODO: Invert sadness happiness check and modifiers.
 	if not s then
 		-- Brand new pet state.
 		s = {
+			boredom = 50,
+			evolution = 0,
+			friendship = 0,
+			happiness = 0,
 			hunger = 100,
-			loyalty = 0,
-			sadness = 100,
-			boredom = 0,
+			morph = 0,
 			thirst = 100,
 			feeding_target = nil
 		}
 		storage.pet_state[player_index] = s
 	else
 		-- Migration fallback.
+		s.boredom = s.boredom or 50
+		s.evolution = s.evolution or 0
+		s.friendship = s.friendship or 0
+		s.happiness = s.happiness or 0
 		s.hunger = s.hunger or 100
-		s.loyalty = s.loyalty or 0
-		s.sadness = s.sadness or 100
-		s.boredom = s.boredom or 0
+		s.morph = s.morph or 0
+		s.thirst = s.thirst or 100
 		if s.feeding_target == nil then
 			s.feeding_target = nil
 		end
@@ -135,7 +138,7 @@ function pet_state.force_emote(player_index, entry, emote, fast_render)
 
 	-- If nothing is active, fire emote immediately.
 	if not es.active_type then
-		debug.info("Queuing next forced emote: " .. emote)
+		debug.info("An event has triggered a forced emote [" .. emote .. "].")
 		pet_state.start_next_forced_emote(player_index, entry, fast_render)
 	end
 end
@@ -181,7 +184,7 @@ function pet_state.tick_pet_state(player_index, entry)
 
 		-- Update mood based on stats
 		s.mood = pet_state.calculate_mood(player_index)
-		debug.info("Queuing next mood emote: " .. s.mood)
+		debug.info("A new mood has been calculated and queued [" .. s.mood .. "].")
 		pet_state.queue_emote(player_index, pet, s.mood)
 
 		-- Add mood to queue if no forced emote is currently not active.
@@ -233,18 +236,29 @@ function pet_state.calculate_mood(player_index)
 			Etc.
 	]]
 
-	-- Extreme states.
 	local mood_table = {}
+	-- All pet needs are met and stats are above average.
+	if (
+		s.hunger < MC.CONTENT and
+		s.boredom < MC.ALERT and
+		s.happiness > MC.HAPPY and
+		s.friendship > MC.DEVOTED
+	) then
+		mood_table[#mood_table + 1] = "ecstatic" 
+		return pick_random_mood(player_index, mood_table)
+	end 
+
+	-- Extreme states.
 	if s.hunger >= MC.STARVING then
 		mood_table[#mood_table + 1] = "hungry"
 	end
 	if s.boredom >= MC.FRUSTRATED then
 		mood_table[#mood_table + 1] = "angry"
 	end
-	if s.sadness >= MC.DEPRESSED then
+	if s.happiness <= MC.DEPRESSED then
 		mood_table[#mood_table + 1] = "very-sad"
 	end
-	if s.loyalty >= MC.DEVOTED then
+	if s.friendship >= MC.DEVOTED then
 		mood_table[#mood_table + 1] = "love"
 	end
 	if next(mood_table) ~= nil then
@@ -258,10 +272,10 @@ function pet_state.calculate_mood(player_index)
 	if s.boredom >= MC.APATHETIC then
 		mood_table[#mood_table + 1] = "bored"
 	end
-	if s.sadness >= MC.SAD then
-		mood_table[#mood_table + 1] = "hurt"
+	if s.happiness <= MC.SAD then
+		mood_table[#mood_table + 1] = "sad"
 	end
-	if s.loyalty >= MC.LOYAL then
+	if s.friendship >= MC.LOYAL then
 		mood_table[#mood_table + 1] = "happy"
 	end
 	if next(mood_table) ~= nil then
@@ -275,10 +289,10 @@ function pet_state.calculate_mood(player_index)
 	if s.boredom >= MC.ALERT then
 		mood_table[#mood_table + 1] = "investigate"
 	end
-	if s.sadness >= MC.HAPPY then
-		mood_table[#mood_table + 1] = "very-happy"
+	if s.happiness <= MC.HAPPY then
+		mood_table[#mood_table + 1] = "happy"
 	end
-	if s.loyalty >= MC.FRIENDLY then
+	if s.friendship >= MC.FRIENDLY then
 		mood_table[#mood_table + 1] = "love"
 	end
 	if next(mood_table) ~= nil then
@@ -292,10 +306,10 @@ function pet_state.calculate_mood(player_index)
 	if s.boredom >= MC.FOCUSED then
 		mood_table[#mood_table + 1] = "investigate"
 	end
-	if s.sadness >= MC.OVERJOYED then
-		mood_table[#mood_table + 1] = "ecstatic"
+	if s.happiness <= MC.OVERJOYED then
+		mood_table[#mood_table + 1] = "very-happy"
 	end
-	if s.loyalty >= MC.WARY then
+	if s.friendship >= MC.WARY then
 		mood_table[#mood_table + 1] = "scared"
 	end
 	if next(mood_table) ~= nil then
@@ -311,14 +325,14 @@ function pet_state.set_mood(player_index, mood)
 end
 
 -- Hunger functions.
-function pet_state.set_hunger(player_index, value)
-	local s = ensure_state(player_index)
-	s.hunger = math.max(0, math.min(100, value))
-end
-
 function pet_state.get_hunger(player_index)
 	local s = ensure_state(player_index)
 	return s.hunger
+end
+
+function pet_state.set_hunger(player_index, value)
+	local s = ensure_state(player_index)
+	s.hunger = math.max(0, math.min(100, value))
 end
 
 function pet_state.add_hunger(player_index, delta)
@@ -342,23 +356,71 @@ function pet_state.ate_food(player_index, entry, food_value)
 	local satiation_mood_modifier = math.floor((s.hunger ^ 1.2) * 0.05)
 
 	s.hunger = math.max(0, math.min(100, s.hunger - fv))
-	s.loyalty = math.min(100, s.loyalty + FC.FOOD_LOYALTY_MODIFIER + satiation_mood_modifier)
-	s.sadness = math.max(0, s.sadness - FC.FOOD_SADNESS_MODIFIER - satiation_mood_modifier)
+	s.friendship = math.min(100, s.friendship + FC.FOOD_FRIENDSHIP_MODIFIER + satiation_mood_modifier)
+	s.happiness = math.max(0, s.happiness - FC.FOOD_HAPPINESS_MODIFIER - satiation_mood_modifier)
 	s.boredom = math.max(0, s.boredom - FC.FOOD_BOREDOM_MODIFIER - satiation_mood_modifier)
 
 	pet_state.force_emote(player_index, entry, "love", true)
 	pet_state.force_emote(player_index, entry, "defend", false, false)
 end
 
--- Boredom functions.
-function pet_state.set_boredom(player_index, value)
+-- Thirst functions.
+function pet_state.get_thirst(player_index)
 	local s = ensure_state(player_index)
-	s.boredom = math.max(0, math.min(100, value))
+	return s.thirst
 end
 
+function pet_state.set_thirst(player_index, value)
+	local s = ensure_state(player_index)
+	s.thirst = math.max(0, math.min(100, value))
+end
+
+function pet_state.add_morph(player_index, delta)
+	local s = ensure_state(player_index)
+	s.thirst = math.max(0, math.min(100, s.thirst + delta))
+end
+
+-- Morph functions.
+function pet_state.get_morph(player_index)
+	local s = ensure_state(player_index)
+	return s.morph
+end
+
+function pet_state.set_morph(player_index, value)
+	local s = ensure_state(player_index)
+	s.morph = math.max(0, math.min(100, value))
+end
+
+function pet_state.add_morph(player_index, delta)
+	local s = ensure_state(player_index)
+	s.morph = math.max(0, math.min(100, s.morph + delta))
+end
+
+-- Evolution functions.
+function pet_state.get_evolution(player_index)
+	local s = ensure_state(player_index)
+	return s.evolution
+end
+
+function pet_state.set_evolution(player_index, value)
+	local s = ensure_state(player_index)
+	s.evolution = math.max(0, math.min(100, value))
+end
+
+function pet_state.add_evolution(player_index, delta)
+	local s = ensure_state(player_index)
+	s.evolution = math.max(0, math.min(100, s.evolution + delta))
+end
+
+-- Boredom functions.
 function pet_state.get_boredom(player_index)
 	local s = ensure_state(player_index)
 	return s.boredom
+end
+
+function pet_state.set_boredom(player_index, value)
+	local s = ensure_state(player_index)
+	s.boredom = math.max(0, math.min(100, value))
 end
 
 function pet_state.add_boredom(player_index, delta)
@@ -366,36 +428,36 @@ function pet_state.add_boredom(player_index, delta)
 	s.boredom = math.max(0, math.min(100, s.boredom + delta))
 end
 
--- Sadness functions.
-function pet_state.set_sadness(player_index, value)
+-- Happiness functions.
+function pet_state.get_happiness(player_index)
 	local s = ensure_state(player_index)
-	s.sadness = math.max(0, math.min(100, value))
+	return s.happiness
 end
 
-function pet_state.get_sadness(player_index)
+function pet_state.set_happiness(player_index, value)
 	local s = ensure_state(player_index)
-	return s.sadness
+	s.happiness = math.max(0, math.min(100, value))
 end
 
-function pet_state.add_sadness(player_index, delta)
+function pet_state.add_happiness(player_index, delta)
 	local s = ensure_state(player_index)
-	s.sadness = math.max(0, math.min(100, s.sadness + delta))
+	s.happiness = math.max(0, math.min(100, s.happiness + delta))
 end
 
--- Loyalty functions.
-function pet_state.set_loyalty(player_index, value)
+-- Friendship functions.
+function pet_state.get_friendship(player_index)
 	local s = ensure_state(player_index)
-	s.loyalty = math.max(0, math.min(100, value))
+	return s.friendship
 end
 
-function pet_state.get_loyalty(player_index)
+function pet_state.set_friendship(player_index, value)
 	local s = ensure_state(player_index)
-	return s.loyalty
+	s.friendship = math.max(0, math.min(100, value))
 end
 
-function pet_state.add_loyalty(player_index, delta)
+function pet_state.add_friendship(player_index, delta)
 	local s = ensure_state(player_index)
-	s.loyalty = math.max(0, math.min(100, s.loyalty + delta))
+	s.friendship = math.max(0, math.min(100, s.friendship + delta))
 end
 
 -- Pause functions.
@@ -412,10 +474,18 @@ function pet_state.is_paused(player_index)
 	return s.pause_end_tick and game.tick < s.pause_end_tick
 end
 
--- Debugging functions.
+-- TODO: Add new stats and format text.
+-- Output pet information to console.
+-- Boredom
+-- Evolution
+-- Friendship
+-- Happiness
+-- Hunger
+-- Morph
+-- Thirst
 function pet_state.debug_dump(player_index)
 	local s = ensure_state(player_index)
-	return string.format("\n\thunger=%d\n\tloyalty=%d\n\tsadness=%d\n\tboredom=%d", s.hunger, s.loyalty, s.sadness, s.boredom)
+	return string.format("[font=default-bold]\n\thunger=%d\n\tfriendship=%d\n\thappiness=%d\n\tboredom=%d[/font]", s.hunger, s.friendship, s.happiness, s.boredom)
 end
 
 return pet_state

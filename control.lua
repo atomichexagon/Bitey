@@ -2,26 +2,27 @@ local events = require("scripts.core.events")
 local debug = require("scripts.util.debug")
 local pet_lifecycle = require("scripts.core.pet_lifecycle")
 local pet_state = require("scripts.core.pet_state")
+local text = require("scripts.util.text_format")
+
+local DC = require("scripts.constants.debug") -- Debug constants.
 
 -- Console commands.
-commands.add_command("petstatus", "Show pet status for the calling player.", function(cmd)
+commands.add_command("bpstatus", DC.ICON .. string.format("%s %s", DC.ICON, text.format("Show pet status for the calling player.")), function(cmd)
 	local player = game.get_player(cmd.player_index)
 	if not player then
-		game.print("[BP] /petstatus must be run by a player.")
 		return
 	end
 	local state = pet_state.get(player.index)
-	game.print("[BP] Pet state: " .. pet_state.debug_dump(player.index))
-
+	game.print(string.format("%s %s %s", DC.ICON, text.format("Pet state:", "l"), pet_state.debug_dump(player.index)))
 	pet_lifecycle.print_status_for_players(player)
 end)
 
-commands.add_command("petdebuglevel", "Set debug level for biter-pet mod.", function(cmd)
+commands.add_command("bpdebug", DC.ICON .. string.format("%s %s", DC.ICON, text.format("Set debug level for biter-pet mod.")), function(cmd)
 	local lvl = tonumber(cmd.parameter)
 	if lvl then
 		debug.set_level(lvl)
 	else
-		game.print("Usage: /petdebuglevel <0-4>")
+		game.print(string.format("%s %s %s", DC.ICON, text.format("Usage:", "l"), text.format("/bpdebug [0-4]")))
 	end
 end)
 

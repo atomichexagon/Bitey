@@ -37,20 +37,20 @@ function pet_spawn.choose_orphan_spawn(surface, origin)
 		end
 	end
 
-	debug.info("Polling for valid spawn locations. Attempts: " .. attempts .. ", successes: " .. successes)
+	debug.info("Polling for valid spawn locations.")
 	debug.info(successes .. " of " .. attempts .. " attemps were successful.")
 
 	-- Choose random spawn position for nest.
 	if #pos_candidates > 0 then
 		local spawn_pos = pos_candidates[math.random(1, #pos_candidates)]
-		debug.info("Choosing randomized spawn position: " .. serpent.line(spawn_pos))
+		debug.info("Choosing randomized spawn position from candidate positions.")
 		return spawn_pos
 	end
 
 	-- Take another stab at it if all else fails.
 	local fallback_pos = surface.find_non_colliding_position("pet-biter-baby", origin, 20, 1) or origin
-	debug.info("Choosing fallback spawn position: " .. serpent.line(fallback_pos))
-	debug.info("The map better be very abnormal for this to have happened.")
+	debug.info("Choosing emergency fallback spawn position.")
+	debug.info("The map better be very abnormal for this message to have triggered.")
 	return fallback_pos
 end
 
@@ -66,7 +66,7 @@ function pet_spawn.spawn_orphan_baby(player, entry)
 	local pos = surface.find_non_colliding_position("pet-biter-baby", storage.pet_spawn_point, 10, 0.5)
 
 	if not pos then
-		debug.info("Could not find a valid spawn location for the orphaned baby biter.")
+		debug.info("Could not find a valid spawn location for the orphaned biter.")
 		return
 	end
 
@@ -85,7 +85,7 @@ function pet_spawn.spawn_orphan_baby(player, entry)
 	entry.unit = pet
 	entry.is_orphaned = true
 	entry.biter_tier = "pet-biter-baby" -- Reset pet tier for new orphans.
-	debug.info("Orphaned baby biter spawned at: " .. serpent.line(pos))
+	debug.info("Orphaned biter has spawned.")
 end
 
 function pet_spawn.spawn_pet_for_player(player, entry)
@@ -107,7 +107,7 @@ function pet_spawn.spawn_pet_for_player(player, entry)
 				position = pos,
 				force = player.force
 			}
-			debug.info("Recovered lost pet of tier: " .. tier)
+			debug.info("Recovered lost pet.")
 			return
 		end
 	end
@@ -122,7 +122,7 @@ function pet_spawn.spawn_pet_for_player(player, entry)
 			entry.was_alive = true
 		else
 			local remaining = math.floor((SC.TICKS_PER_DAY - (current_tick - last_death)) / 60)
-			debug.info("Waiting for next pet spawn cycle. " .. remaining .. " seconds remaining.")
+			debug.info("Next pet spawn will trigger in " .. remaining .. " seconds.")
 		end
 	end
 end
