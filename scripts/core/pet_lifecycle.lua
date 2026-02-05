@@ -1,6 +1,8 @@
 -- TODO: Move some functions out of this file and clean it up.
 -- TODO: Add small random chance for biter to investigate entity and pause for a second or two. This should take precedence over everything else.
 -- TODO: Player defense may be automatic based on force alliance, but test it out anyway.
+-- TODO: Biter should only attack lower weaker biters unless it is behemoth tier.
+-- TODO: Biter happiness should go to zero and they should stay by corpse until it is picked up.
 local debug = require("scripts.util.debug")
 local pet_state = require("scripts.core.pet_state")
 local position_util = require("scripts.util.position")
@@ -96,7 +98,7 @@ local function handle_feeding_behavior(player_index, player, pet, entry)
 		local amount = target.stack.count
 		target.destroy()
 
-		pet_state.ate_food(player_index, entry)
+		pet_state.ate_good_food(player_index, entry)
 		pet_state.set_feeding_target(player_index, nil)
 		return true
 	end
@@ -382,7 +384,8 @@ function pet_lifecycle.debug_dump(player)
 
 	-- Collect and preformat pet data.
 	local position = string.format("[gps=%s,%s]", pet.position.x, pet.position.y)
-	local distance = string.format("%.2f", position_util and position_util.distance and position_util.distance(pet.position, player.position) or "N/A")
+	local distance = string.format("%.2f", position_util and position_util.distance and
+			position_util.distance(pet.position, player.position) or "N/A")
 	local h_color = TF.FULL_HEALTH
 
 	if (pet.health and pet.prototype and pet.prototype.get_max_health) then
@@ -391,8 +394,8 @@ function pet_lifecycle.debug_dump(player)
 		end
 	end
 
-	local health = string.format("[color=%s]%.1f[/color] | [color=%s]%.1f[/color]", h_color, pet.health or -1, TF.FULL_HEALTH,
-			pet.prototype and pet.prototype.get_max_health() or -1)
+	local health = string.format("[color=%s]%.1f[/color] | [color=%s]%.1f[/color]", h_color, pet.health or -1,
+			TF.FULL_HEALTH, pet.prototype and pet.prototype.get_max_health() or -1)
 
 	-- Final format of alignment of pet data.
 	local p_name = string.format("%s %s", t.fm("Tier:", "l"), t.fm(pet.name or "<?>", "m", 1))

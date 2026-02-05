@@ -28,7 +28,6 @@ local function process_intro_notification(player_index, entry)
 		entry.intro_pet_alert_threshold = random_delay
 	end
 
-	-- TODO: Change this from an alert to a goal... maybe... (or not).
 	if entry.intro_end_tick and not entry.intro_notification_sent then
 		if now > entry.intro_pet_alert_threshold then
 			local direction = position.get_direction_of_position(player.position, pet.position)

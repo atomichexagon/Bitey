@@ -1,5 +1,3 @@
--- TODO: Delay notification until 10 seconds after opening cinematic.
--- TODO: Move notification elsewhere.
 local debug = require("scripts.util.debug")
 local pet_nest = require("scripts.core.pet_nest")
 local position = require("scripts.util.position")

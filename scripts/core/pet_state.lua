@@ -1,5 +1,3 @@
--- TODO: Have boredom slowly increase if the pet is not orphaned.
--- TODO: Implement thirst.
 local debug = require("scripts.util.debug")
 local pet_visuals = require("scripts.core.pet_visuals")
 local t = require("scripts.util.text_format")
@@ -8,6 +6,7 @@ local HC = require("scripts.constants.hunger") -- Hunger constants.
 local FC = require("scripts.constants.food") -- Food constants.
 local MC = require("scripts.constants.mood") -- Mood constants.
 local VC = require("scripts.constants.visuals") -- Visuals constants.
+local TF = require("scripts.constants.text_format") -- Text color constants.
 
 local pet_state = {}
 
@@ -16,7 +15,6 @@ local function ensure_state(player_index)
 	storage.pet_state = storage.pet_state or {}
 	local s = storage.pet_state[player_index]
 
-	-- TODO: Invert sadness happiness check and modifiers.
 	if not s then
 		-- Brand new pet state.
 		s = {
@@ -170,6 +168,8 @@ local function tick_emotes(player_index, entry)
 	end
 end
 
+-- TODO: Implement decrements for boredom and happiness.
+-- TODO: Boredom and happiness should scale with hunger and thirst.
 function pet_state.tick_pet_state(player_index, entry)
 	local s = ensure_state(player_index)
 	local now = game.tick
@@ -335,7 +335,8 @@ function pet_state.add_hunger(player_index, delta)
 	delta = delta or HC.HUNGER_INCREMENT
 	local new_hunger = math.max(0, math.min(100, s.hunger + (delta)))
 
-	debug.info(string.format("Hunger %s from %s to %s.", (delta > 0 and "increased") or "decreased",s.hunger, new_hunger))
+	debug.info(string.format("[color=%s]Hunger[/color] %s from %s to %s.", TF.INFO_COLOR,
+			(delta > 0 and "increased") or "decreased", s.hunger, new_hunger))
 	s.hunger = new_hunger
 end
 
@@ -349,15 +350,19 @@ function pet_state.get_feeding_target(player_index)
 	return s.feeding_target
 end
 
-function pet_state.ate_food(player_index, entry, food_value)
+-- TODO: Build evolution function for eating uranium.
+-- TODO: Build biter effects module for uranium glowing.
+-- TODO: Build functions and constants for bad food.
+-- TODO: Build functions and constants for morph foods.
+-- TODO: Build functions and constants for thirst.
+function pet_state.ate_good_food(player_index, entry, food_value)
 	local s = ensure_state(player_index)
 	local satiation_mood_modifier = math.floor((s.hunger ^ 1.2) * 0.05)
 
-
 	pet_state.add_hunger(player_index, FC.FOOD_DEFAULT_SATIATION_VALUE)
 	pet_state.add_friendship(player_index, FC.FOOD_FRIENDSHIP_MODIFIER + satiation_mood_modifier)
-	s.happiness = math.max(0, s.happiness - FC.FOOD_HAPPINESS_MODIFIER - satiation_mood_modifier)
-	s.boredom = math.max(0, s.boredom - FC.FOOD_BOREDOM_MODIFIER - satiation_mood_modifier)
+	pet_state.add_happiness(player_index, FC.FOOD_HAPPINESS_MODIFIER + satiation_mood_modifier)
+	pet_state.add_boredom(player_index, FC.FOOD_BOREDOM_MODIFIER + satiation_mood_modifier)
 
 	pet_state.force_emote(player_index, entry, "love", true)
 	pet_state.force_emote(player_index, entry, "defend", false, false)
@@ -374,9 +379,12 @@ function pet_state.set_thirst(player_index, value)
 	s.thirst = math.max(0, math.min(100, value))
 end
 
-function pet_state.add_morph(player_index, delta)
+function pet_state.add_thirst(player_index, delta)
 	local s = ensure_state(player_index)
-	s.thirst = math.max(0, math.min(100, s.thirst + delta))
+	local new_thirst = math.max(0, math.min(100, s.thirst + delta))
+	debug.info(string.format("[color=%s]Thirst[/color] %s from %s to %s.", TF.INFO_COLOR,
+			(delta > 0 and "increased") or "decreased", s.morthirsth, new_thirst))
+	s.thirst = new_thirst
 end
 
 -- Morph functions.
@@ -392,7 +400,10 @@ end
 
 function pet_state.add_morph(player_index, delta)
 	local s = ensure_state(player_index)
-	s.morph = math.max(0, math.min(100, s.morph + delta))
+	local new_morph = math.max(0, math.min(100, s.morph + delta))
+	debug.info(string.format("[color=%s]Morph[/color] %s from %s to %s.", TF.INFO_COLOR,
+			(delta > 0 and "increased") or "decreased", s.morph, new_morph))
+	s.morph = new_morph
 end
 
 -- Evolution functions.
@@ -408,7 +419,10 @@ end
 
 function pet_state.add_evolution(player_index, delta)
 	local s = ensure_state(player_index)
-	s.evolution = math.max(0, math.min(100, s.evolution + delta))
+	local new_evolution = math.max(0, math.min(100, s.evolution + delta))
+	debug.info(string.format("[color=%s]Evolution[/color] %s from %s to %s.", TF.INFO_COLOR,
+			(delta > 0 and "increased") or "decreased", s.evolution, new_evolution))
+	s.evolution = new_evolution
 end
 
 -- Boredom functions.
@@ -424,7 +438,10 @@ end
 
 function pet_state.add_boredom(player_index, delta)
 	local s = ensure_state(player_index)
-	s.boredom = math.max(0, math.min(100, s.boredom + delta))
+	local new_boredom = math.max(0, math.min(100, s.boredom + delta))
+	debug.info(string.format("[color=%s]Boredom[/color] %s from %s to %s.", TF.INFO_COLOR,
+			(delta > 0 and "increased") or "decreased", s.boredom, new_boredom))
+	s.boredom = new_boredom
 end
 
 -- Happiness functions.
@@ -440,7 +457,10 @@ end
 
 function pet_state.add_happiness(player_index, delta)
 	local s = ensure_state(player_index)
-	s.happiness = math.max(0, math.min(100, s.happiness + delta))
+	local new_happiness = math.max(0, math.min(100, s.happiness + delta))
+	debug.info(string.format("[color=%s]Happiness[/color] %s from %s to %s.", TF.INFO_COLOR,
+			(delta > 0 and "increased") or "decreased", s.happiness, new_happiness))
+	s.happiness = new_happiness
 end
 
 -- Friendship functions.
@@ -457,8 +477,8 @@ end
 function pet_state.add_friendship(player_index, delta)
 	local s = ensure_state(player_index)
 	local new_friendship = math.max(0, math.min(100, s.friendship + delta))
-
-	debug.info(string.format("Friendship %s from %s to %s.", (delta > 0 and "increased") or "decreased", s.friendship, new_friendship))
+	debug.info(string.format("[color=%s]Friendship[/color] %s from %s to %s.", TF.INFO_COLOR,
+			(delta > 0 and "increased") or "decreased", s.friendship, new_friendship))
 	s.friendship = new_friendship
 end
 
@@ -485,8 +505,7 @@ function pet_state.debug_dump(player_index)
 	local hunger = string.format("%s %s", t.fm("Hunger:", "f"), t.fm(s.hunger, "m", 1))
 	local morph = string.format("%s %s", t.fm("Morph:", "f"), t.fm(s.morph, "m", 1))
 	local thirst = string.format("%s %s", t.fm("Thirst:", "f"), t.fm(s.thirst, "m", 1))
-	return string.format("%s\n%s\n%s\n%s\n%s\n%s\n%s", boredom, evolution, friendship,
-			happiness, hunger, morph, thirst)
+	return string.format("%s\n%s\n%s\n%s\n%s\n%s\n%s", boredom, evolution, friendship, happiness, hunger, morph, thirst)
 end
 
 return pet_state

@@ -1,5 +1,3 @@
--- TODO: Move constants to constants folder.
--- TODO: Change remnants to just spawn biter corpses and a broken tank or something.
 local post_util = require("scripts.util.position")
 
 local pet_nest = {}
