@@ -3,10 +3,10 @@ local t = require("scripts.util.text_format")
 local DC = require("scripts.constants.debug") -- Debug constants.
 local TF = require("scripts.constants.text_format") -- Text color constants.
 
-local dbg = {}
+local pet_debug = {}
 
 -- Debug levels.
-dbg.level = {
+pet_debug.level = {
 	none = 0,
 	error = 1,
 	warn = 2,
@@ -14,27 +14,26 @@ dbg.level = {
 	trace = 4
 }
 
--- Debug levels reverse map.
-dbg.level_name = {}
-for name, value in pairs(dbg.level) do dbg.level_name[value] = name end
+pet_debug.level_name = {}
 
--- Default debug level.
-dbg.current_level = dbg.level.error
+-- Debug levels reverse map.
+for name, value in pairs(pet_debug.level) do pet_debug.level_name[value] = name end
+
+pet_debug.current_level = DC.DEBUG_DEFAULT_LEVEL
 
 local last_print_tick = {}
 
--- Internal safe message printer.
-local function safe_print(key, msg)
+local function safe_print(key, message)
 	local tick = game and game.tick or 0
 
-	-- Rate limit by key.
+	-- Rate limit by message key.
 	if DC.DEBUG_ENABLE_RATE_LIMITER then
 		if last_print_tick[key] and tick - last_print_tick[key] < DC.DEBUG_RATE_LIMIT then return end
 	end
 
 	last_print_tick[key] = tick
 
-	if game and game.print then game.print(msg) end
+	if game and game.print then game.print(message) end
 end
 
 local function get_caller_module()
@@ -71,13 +70,13 @@ local function get_caller_module()
 end
 
 local function log(level, message)
-	if level > dbg.current_level then return end
+	if level > pet_debug.current_level then return end
 
 	local module_info = get_caller_module()
 	local tick = game and game.tick or 0
 	local formatted_prefix = string.format("%s %s %s.%s", DC.ICON,
-			(level < 0 and t.f("COMMAND", "a")) or (level == dbg.level.error and t.f("ERROR", "e")) or
-					(level == dbg.level.warn and t.f("WARN", "w")) or (level == dbg.level.info and t.f("INFO", "i")) or
+			(level < 0 and t.f("COMMAND", "a")) or (level == pet_debug.level.error and t.f("ERROR", "e")) or
+					(level == pet_debug.level.warn and t.f("WARN", "w")) or (level == pet_debug.level.info and t.f("INFO", "i")) or
 					t.f("TRACE", "t"), t.f(module_info.filename, "c"), t.f(module_info.func .. "()", "f"))
 	local formatted_message = string.format("%s", t.f(message))
 	local assembled_console_line = string.format("%s %s", formatted_prefix, formatted_message)
@@ -85,36 +84,36 @@ local function log(level, message)
 end
 
 -- Public helpers.
-function dbg.error(message)
-	log(dbg.level.error, message)
+function pet_debug.error(message)
+	log(pet_debug.level.error, message)
 end
 
-function dbg.warn(message)
-	log(dbg.level.warn, message)
+function pet_debug.warn(message)
+	log(pet_debug.level.warn, message)
 end
 
-function dbg.info(message)
-	log(dbg.level.info, message)
+function pet_debug.info(message)
+	log(pet_debug.level.info, message)
 end
 
-function dbg.trace(message)
-	log(dbg.level.trace, message)
+function pet_debug.trace(message)
+	log(pet_debug.level.trace, message)
 end
 
-function dbg.always(message)
+function pet_debug.always(message)
 	log(-1, message)
 end
 
 local function get_font_color_from_level(level)
-	if level == dbg.level.none then
+	if level == pet_debug.level.none then
 		return TF.NONE_COLOR
-	elseif level == dbg.level.error then
+	elseif level == pet_debug.level.error then
 		return TF.ERROR_COLOR
-	elseif level == dbg.level.warn then
+	elseif level == pet_debug.level.warn then
 		return TF.WARN_COLOR
-	elseif level == dbg.level.info then
+	elseif level == pet_debug.level.info then
 		return TF.INFO_COLOR
-	elseif level == dbg.level.trace then
+	elseif level == pet_debug.level.trace then
 		return TF.TRACE_COLOR
 	else
 		return TF.MESSAGE_COLOR
@@ -122,7 +121,7 @@ local function get_font_color_from_level(level)
 end
 
 local function update_player_speed(player)
-	if dbg.current_level > dbg.level.none then
+	if pet_debug.current_level > pet_debug.level.none then
 		player.character_running_speed_modifier = 2
 	else
 		player.character_running_speed_modifier = 0
@@ -130,8 +129,8 @@ local function update_player_speed(player)
 end
 
 -- Allows debug level configuration via command console.
-function dbg.set_level(new_level, player)
-	dbg.current_level = new_level
+function pet_debug.set_level(new_level, player)
+	pet_debug.current_level = new_level
 
 	if (player and player.valid) then
 		update_player_speed(player)
@@ -142,10 +141,10 @@ function dbg.set_level(new_level, player)
 	end
 
 	local level_color = get_font_color_from_level(new_level)
-	local uc_level_name = string.upper(dbg.level_name[dbg.current_level])
+	local uc_level_name = string.upper(pet_debug.level_name[pet_debug.current_level])
 	local formatted_message = string.format(t.f("%s Debug logging level set to %s - [color=%s]%s[/color] "), DC.ICON,
-			tostring(dbg.current_level), level_color, uc_level_name)
+			tostring(pet_debug.current_level), level_color, uc_level_name)
 	game.print(formatted_message)
 end
 
-return dbg
+return pet_debug

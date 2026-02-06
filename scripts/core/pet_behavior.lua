@@ -32,7 +32,7 @@ local function process_intro_notification(player_index, entry)
 			local direction = position.get_direction_of_position(player.position, pet.position)
 			notifications.notify(player, pet, {
 				type = "entity",
-				name = BITER_MAP[entry.biter_tier_friendly_name].game_eq
+				name = BITER_MAP[entry.biter_tier_friendly_name].base_equivalent
 			}, "You hear a strange noise coming from the " .. direction .. ".")
 			entry.intro_notification_sent = true
 			audio.play_global_sound(player, "intro-spitter-death-call")

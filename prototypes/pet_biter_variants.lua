@@ -13,16 +13,16 @@ local function make_pet_variant(base, name, scale_factor)
 			}
 		end
 
-		if layer.hr_version then scale_layer(layer.hr_version) end
+		if layer.high_resolution_version then scale_layer(layer.high_resolution_version) end
 	end
 
 	-- Helper to traverse animation tables.
-	local function process_animation(anim)
-		if not anim then return end
-		if anim.layers then
-			for _, layer in pairs(anim.layers) do scale_layer(layer) end
+	local function process_animation(animation)
+		if not animation then return end
+		if animation.layers then
+			for _, layer in pairs(animation.layers) do scale_layer(layer) end
 		else
-			scale_layer(anim)
+			scale_layer(animation)
 		end
 	end
 

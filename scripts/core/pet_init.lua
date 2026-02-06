@@ -26,8 +26,8 @@ function pet_init.check_existing_research()
 	for _, force in pairs(game.forces) do
 		if force.technologies["fluid-handling"] and force.technologies["fluid-handling"].researched then
 			for _, player in pairs(force.players) do
-				local s = ensure_state(player.index)
-				s.has_fluid_handling = true
+				local state = ensure_state(player.index)
+				state.has_fluid_handling = true
 			end
 		end
 	end

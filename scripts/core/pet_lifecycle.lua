@@ -1,8 +1,7 @@
 -- TODO: Move some functions out of this file and clean it up.
 -- TODO: Add small random chance for biter to investigate entity and pause for a second or two. This should take precedence over everything else.
--- TODO: Player defense may be automatic based on force alliance, but test it out anyway.
--- TODO: Biter should only attack lower weaker biters unless it is behemoth tier.
--- TODO: Biter happiness should go to zero and they should stay by corpse until it is picked up.
+-- TODO: Biter should only attack lower weaker biters unless it is behemoth tier (might abandon this idea).
+-- TODO: On player death; biter happiness should go to zero and they should stay by corpse until it is picked up.
 local debug = require("scripts.util.debug")
 local notifications = require("scripts.util.notifications")
 local pet_behavior = require("scripts.core.pet_behavior")
@@ -47,27 +46,27 @@ local function find_nearest_food(pet)
 	if not (pet and pet.valid) then return nil end
 
 	local surface = pet.surface
-	local pos = pet.position
+	local position = pet.position
 
 	-- Detect items on ground near pet.
 	local items = surface.find_entities_filtered {
-		position = pos,
+		position = position,
 		radius = LC.FOOD_SEARCH_RADIUS,
 		type = "item-entity"
 	}
 
 	local nearest = nil
-	local best_distance = math.huge
+	local best_distance_squared = math.huge
 
 	for _, item in ipairs(items) do
 		if item.valid and item.stack and item.stack.valid_for_read then
 			local name = item.stack.name
-
 			local food_type = FOOD_DEFINITIONS[name]
+
 			if food_type then
-				local d = position_util.distance(pos, item.position)
-				if d < best_distance then
-					best_distance = d
+				local distance_squared = position_util.distance_squared(position, item.position)
+				if distance_squared < best_distance_squared then
+					best_distance_squared = distance_squared
 					nearest = item
 				end
 			end
@@ -79,20 +78,15 @@ end
 
 local function handle_feeding_behavior(player_index, player, pet, entry)
 	local target = pet_state.get_feeding_target(player_index)
+
+	-- Food disappeared.
 	if not (target and target.valid) then
 		pet_state.set_feeding_target(player_index, nil)
 		return false
 	end
 
-	-- The target disappeared.
-	if not target then
-		pet_state.set_feeding_target(player_index, nil)
-		return false
-	end
-
 	-- Check if pet is near edible food.
-	-- TODO: Replace with position utility.
-	local distance = position_util.distance(pet.position, target.position)
+	local distance = position_util.distance_squared(pet.position, target.position)
 
 	if distance <= (LC.EAT_RADIUS * LC.EAT_RADIUS) then
 		pet.commandable.set_command {
@@ -110,8 +104,6 @@ local function handle_feeding_behavior(player_index, player, pet, entry)
 		end
 
 		-- Eat the food.
-		-- TODO: See if stack is actually necessary.
-		local amount = target.stack.count
 		target.destroy()
 
 		pet_state.ate_food(player_index, entry, food_item)
@@ -140,6 +132,7 @@ function pet_lifecycle.on_tick(event)
 	end
 end
 
+-- TODO: Add triggers for attack.
 function pet_lifecycle.process_pet(player_index, entry)
 	local player = game.get_player(player_index)
 	if not pet_lifecycle.is_player_valid(player) then return end
@@ -147,38 +140,44 @@ function pet_lifecycle.process_pet(player_index, entry)
 	local pet = pet_lifecycle.ensure_pet(player_index, entry)
 	if not pet then return end
 
-	-- Update hunger value.
-	pet_state.tick_pet_state(player_index, entry)
+	-- Combat branch.
+	local behavior = pet_state.get_behavior(player_index)
+	if behavior == "flee" then
+		debug.trace("Pet taking flee branch.")
+		pet_lifecycle.state_flee(player_index, player, pet, entry)
+		return
+	end
 
-	-- Skip other behaviors if paused.
+	local attack_target = pet_lifecycle.evaluate_attack_target(player_index, pet, entry)
+	if attack_target then pet_state.set_behavior(player_index, "attack") end
+
+	behavior = pet_state.get_behavior(player_index)
+	if behavior == "attack" then
+		debug.trace("Pet taking attack branch.")
+		pet_lifecycle.state_attack(player_index, player, pet)
+		return
+	end
+
+	-- Pause branch.
+	pet_state.tick_pet_state(player_index, entry)
 	if pet_lifecycle.handle_pause(player_index, entry, pet) then return end
 
+	-- Feed and follow branch.
 	local target = pet_state.get_feeding_target(player_index)
 	pet_lifecycle.evaluate_target(player_index, pet, target)
-
-	local state = pet_state.get_state(player_index)
-	if state == "seek_food" then
-		pet_lifecycle.state_seek_food(player_index, player, pet, entry)
-		return
+	behavior = pet_state.get_behavior(player_index)
+	if behavior == "seek_food" then
+		return pet_lifecycle.state_seek_food(player_index, player, pet, entry)
+	elseif behavior == "eat" then
+		return pet_lifecycle.state_eat(player_index, player, pet)
+	elseif behavior == "follow" then
+		return pet_lifecycle.state_follow(player_index, player, pet, entry)
+	elseif behavior == "idle" then
+		return pet_lifecycle.state_idle(player_index, player, pet, entry)
 	end
 
-	-- Lower priority behaviors.
-	local state = pet_state.get_state(player_index)
-	if state == "idle" then
-		pet_lifecycle.state_idle(player_index, player, pet, entry)
-	elseif state == "follow" then
-		pet_lifecycle.state_follow(player_index, player, pet, entry)
-	elseif state == "seek_food" then
-		pet_lifecycle.state_seek_food(player_index, player, pet, entry)
-		return
-	elseif state == "eat" then
-		pet_lifecycle.state_eat(player_index, player, pet)
-		return
-	elseif state == "defend" then
-		pet_lifecycle.state_defend(player_index, player, pet)
-		return
-	end
-	pet_state.set_state(player_index, "idle")
+	-- Fallback behavior.
+	pet_state.set_behavior(player_index, "idle")
 	pet_lifecycle.state_idle(player_index, player, pet, entry)
 end
 
@@ -187,22 +186,23 @@ function pet_lifecycle.evaluate_target(player_index, pet, target)
 		target = find_nearest_food(pet)
 		if target then
 			pet_state.set_feeding_target(player_index, target)
-			pet_state.set_state(player_index, "seek_food")
+			pet_state.set_behavior(player_index, "seek_food")
 		end
 	end
 end
 
 function pet_lifecycle.state_idle(player_index, player, pet, entry)
-	local distance = position_util.distance(pet.position, player.position)
+	if not (pet and pet.valid) then return end
+	local distance_squared = position_util.distance_squared(pet.position, player.position)
 	local radius = LC.FOLLOW_RADIUS_BY_TIER[pet.name] or LC.PET_FOLLOW_RADIUS
-	if distance > radius then
-		pet_state.set_state(player_index, "follow")
+	if distance_squared > (radius * radius) then
+		pet_state.set_behavior(player_index, "follow")
 		return
 	end
 
 	local destination = player.position
 
-	if entry.is_orphaned then desintation = storage.pet_spawn_point end
+	if entry.is_orphaned then destination = storage.pet_spawn_point end
 
 	pet.commandable.set_command {
 		type = defines.command.go_to_location,
@@ -245,7 +245,7 @@ function pet_lifecycle.handle_pause(player_index, entry, pet)
 	-- Pause just ended; resume idle behvaior.
 	if was_paused and not paused_now then
 		entry.was_paused = false
-		pet_state.set_state(player_index, "idle")
+		pet_state.set_behavior(player_index, "idle")
 		debug.info("Pet movement has resumed.")
 	end
 	return false
@@ -260,7 +260,7 @@ local function check_for_adoption(player, player_index, pet, entry)
 			debug.info("Pet has been successfully adopted.")
 			notifications.notify(player, pet, {
 				type = "entity",
-				name = BITER_MAP[entry.biter_tier_friendly_name].game_eq
+				name = BITER_MAP[entry.biter_tier_friendly_name].base_equivalent
 			}, "It seems attached to you now.", "utility/achievement_unlocked")
 			return true
 		end
@@ -270,19 +270,19 @@ end
 function pet_lifecycle.state_seek_food(player_index, player, pet, entry)
 	local target = pet_state.get_feeding_target(player_index)
 	if not (target and target.valid) then
-		pet_state.set_state(player_index, "idle")
+		pet_state.set_behavior(player_index, "idle")
 		return
 	end
 
-	local ate = handle_feeding_behavior(player_index, player, pet, entry)
+	local pet_ate = handle_feeding_behavior(player_index, player, pet, entry)
 
-	if ate then
+	if pet_ate then
 		check_for_adoption(player, player_index, pet, entry)
 
 		-- Growth check happens immediately after eating.
 		pet_growth.try_grow(player_index, entry)
 		pet_state.pause(player_index, 60)
-		pet_state.set_state(player_index, "eat")
+		pet_state.set_behavior(player_index, "eat")
 		return
 	end
 
@@ -303,41 +303,134 @@ function pet_lifecycle.state_paused(player_index, player, pet)
 		distraction = defines.distraction.none
 	}
 
-	if not pet_state.is_paused(player_index) then pet_state.set_state(player_index, "idle") end
+	if not pet_state.is_paused(player_index) then pet_state.set_behavior(player_index, "idle") end
 end
 
 function pet_lifecycle.state_eat(player_index, player, pet)
-	-- Eating is handled in handle_feeding_behavior.
+	-- TODO: Re-evaluate this later (low priority).
+	-- Eating is handled in handle_feeding_behavior().
 	-- This state exists only to transition into pause.
 end
 
 function pet_lifecycle.state_follow(player_index, player, pet, entry)
-	-- Determine the target position.
-	local target_pos
+	if not (pet and pet.valid) then return end
+
+	-- Determine target position.
+	local target_position
 	if entry.is_orphaned then
-		-- Fallback to current position if spawn point is missing to prevent crash.
-		target_pos = storage.pet_spawn_point or pet.position
+		target_position = storage.pet_spawn_point or pet.position
 	else
-		target_pos = player.position
+		target_position = player.position
 	end
 
-	-- Calculate distances.
-	local distance = position_util.distance(pet.position, target_pos)
+	local distance_squared = position_util.distance_squared(pet.position, target_position)
 	local radius = LC.FOLLOW_RADIUS_BY_TIER[pet.name] or LC.PET_FOLLOW_RADIUS
 
-	-- If close switch to idle.
-	if distance <= radius then
-		pet_state.set_state(player_index, "idle")
+	-- If near target switch to idle.
+	if distance_squared <= (radius * radius) then
+		pet_state.set_behavior(player_index, "idle")
 		return
 	end
 
-	-- Move toward relevant target.
 	pet.commandable.set_command {
 		type = defines.command.go_to_location,
-		destination = target_pos,
+		destination = target_position,
 		radius = radius,
 		distraction = defines.distraction.by_enemy
 	}
+end
+
+local function find_attack_target(pet, max_distance)
+	return pet.surface.find_nearest_enemy {
+		position = pet.position,
+		max_distance = max_distance,
+		force = pet.force
+	}
+end
+
+function pet_lifecycle.evaluate_attack_target(player_index, pet, entry)
+	local target = pet_state.get_enemy_target(player_index)
+	if (target and target.valid) then return target end
+	pet_state.clear_attack_target(player_index)
+	local new_target = find_attack_target(pet, LC.PET_ATTACK_RADIUS)
+	if new_target then
+		debug.info(string.format("Pet found new attack target %s", t.f(new_target.name, "f")))
+		pet_state.set_attack_target(player_index, new_target)
+		pet_state.set_behavior(player_index, "attack")
+		pet_state.force_emote(player_index, entry, "attack")
+		return new_target
+	end
+	return nil
+end
+
+function pet_lifecycle.state_attack(player_index, player, pet)
+	local target = pet_state.get_enemy_target(player_index)
+	if not (target and target.valid) then
+		pet_state.clear_attack_target(player_index)
+		pet_state.set_behavior(player_index, "follow")
+		return
+	end
+
+	local pet_health = pet.health or 0
+	local target_health = target.health or 0
+	local max_health = pet.prototype.get_max_health()
+
+	local pet_should_flee = pet_health < target_health and (pet_health / max_health) < LC.PET_FLEE_THRESHOLD
+	if (LC.PET_IS_SCAREDY_CAT or pet_should_flee) then
+		pet_state.set_behavior(player_index, "flee")
+		return
+	end
+
+	pet.commandable.set_command {
+		type = defines.command.attack,
+		target = target,
+		distraction = defines.distraction.by_enemy
+	}
+end
+
+function pet_lifecycle.state_flee(player_index, player, pet, entry)
+	local state = pet_state.get(player_index)
+	local emote_state = pet_state.get_queue(player_index)
+
+	if not state.flee_started_at then
+		state.fleet_started_at = game.tick
+		if emote_state.active_type ~= "forced" then
+			pet_state.force_emote(player_index, entry, "scared")
+		end
+	end
+
+	local target = pet_state.get_enemy_target(player_index)
+
+	if not (target and target.valid) then
+		pet_state.clear_attack_target(player_index)
+		pet_state.set_behavior(player_index, "follow")
+		return
+	end
+
+	local distance_squared = position_util.distance_squared(pet.position, target.position)
+	local safe_distance_squared = (LC.PET_FLEE_SAFE_DISTANCE * LC.PET_FLEE_SAFE_DISTANCE)
+
+	if debug.current_level >= 4 then
+		local distance_normalized = position_util.distance(pet.position, target.position)
+		local distance_to_escape = LC.PET_FLEE_SAFE_DISTANCE - distance_normalized
+		debug.trace(string.format("Fleeing %s tiles to safe distance.", t.f(distance_to_escape, "f")))
+	end
+
+	if (distance_squared >= (safe_distance_squared)) then
+		debug.info(string.format("Safe distance reached from target %s", t.f(target.name, "f")))
+		pet_state.clear_attack_target(player_index)
+		pet_state.set_behavior(player_index, "follow")
+		pet_state.force_emote(player_index, entry, "very_sad")
+		return
+	end
+
+	if target and target.valid then
+		pet.commandable.set_command {
+			type = defines.command.flee,
+			from = target,
+			distraction = defines.distraction.by_enemy
+		}
+	end
 end
 
 function pet_lifecycle.on_entity_died(event)
@@ -355,7 +448,7 @@ function pet_lifecycle.on_entity_died(event)
 			if player then
 				notifications.notify(player, pet, {
 					type = "entity",
-					name = BITER_MAP[entry.biter_tier_friendly_name].game_eq
+					name = BITER_MAP[entry.biter_tier_friendly_name].base_equivalent
 				}, "Your faithful companion has died. Perhaps a new friend may appear one day.", "utility/achievement_unlocked")
 			end
 			break
@@ -364,7 +457,6 @@ function pet_lifecycle.on_entity_died(event)
 end
 
 function pet_lifecycle.debug_dump(player)
-	-- Valdidate player and pet.
 	if not (player and player.valid) then game.print(string.format("%s %s", DC.ICON, t.f("No valid player.", "l"))) end
 
 	storage.biter_pet = storage.biter_pet or {}
@@ -381,27 +473,26 @@ function pet_lifecycle.debug_dump(player)
 		return
 	end
 
-	-- Collect and preformat pet data.
+	-- Pre-format of pet data.
 	local position = string.format("[gps=%s,%s]", pet.position.x, pet.position.y)
 	local distance = string.format("%.2f", position_util and position_util.distance and
-			position_util.distance(pet.position, player.position) or "N/A")
-	local h_color = TF.FULL_HEALTH
+			position_util.distance_squared(pet.position, player.position) or "N/A")
+	local health_color = TF.FULL_HEALTH
 
 	if (pet.health and pet.prototype and pet.prototype.get_max_health) then
 		if pet.health < pet.prototype.get_max_health() then local h_color = TFS.DAMAGED_HEALTH end
 	end
 
-	local health = string.format("[color=%s]%.1f[/color] | [color=%s]%.1f[/color]", h_color, pet.health or -1,
+	local health = string.format("[color=%s]%.1f[/color] | [color=%s]%.1f[/color]", health_color, pet.health or -1,
 			TF.FULL_HEALTH, pet.prototype and pet.prototype.get_max_health() or -1)
 
-	-- Final format of alignment of pet data.
-	local p_name = string.format("%s %s", t.fm("Tier:", "l"), t.fm(pet.name or "<?>", "m", 1))
-	local p_type = string.format("%s %s", t.fm("Type:", "l"), t.fm(pet.type or "<?>", "m", 1))
-	local p_position = string.format("%s %s", t.fm("Position:", "l"), t.fm(position, "m", 1))
-	local p_distance = string.format("%s %s", t.fm("Distance:", "l"), t.fm(distance, "m", 1))
-	local p_health = string.format("%s %s", t.fm("Health:", "l"), t.fm(health, "m", 1))
-
-	return string.format("%s\n%s\n%s\n%s\n%s", p_name, p_type, p_position, p_distance, p_health)
+	-- Final format.
+	local pet_name = string.format("%s %s", t.fm("Tier:", "l"), t.fm(pet.name or "<?>", "m", 1))
+	local pet_type = string.format("%s %s", t.fm("Type:", "l"), t.fm(pet.type or "<?>", "m", 1))
+	local pet_position = string.format("%s %s", t.fm("Position:", "l"), t.fm(position, "m", 1))
+	local pet_distance = string.format("%s %s", t.fm("Distance:", "l"), t.fm(distance, "m", 1))
+	local pet_health = string.format("%s %s", t.fm("Health:", "l"), t.fm(health, "m", 1))
+	return string.format("%s\n%s\n%s\n%s\n%s", pet_name, pet_type, pet_type, pet_position, pet_distance, pet_health)
 end
 
 return pet_lifecycle

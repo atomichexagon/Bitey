@@ -37,9 +37,9 @@ function pet_visuals.show_pet_reaction(player_index, entry, sprite, fast_render)
 		}
 	}
 	if fast_render then
-		debug.info("Fast render enabled for sprite [img=" .. sprite .. "].")
+		debug.trace(string.format("Fast render queued for sprite [img=%s].", sprite))
 	else
-		debug.info("Standard render enabled for sprite [img=" .. sprite .. "].")
+		debug.trace(string.format("Standard render queued for sprite [img=%s].", sprite))
 	end
 	local sprite_id = rendering.draw_sprite {
 		sprite = sprite,

@@ -1,12 +1,12 @@
 {
-	"name": "biter-pet",
-	"version": "0.26.62",
-	"title": "Bitey",
-	"author": "Spookynutz",
-	"factorio_version": "2.0",
-	"dependencies": [
-		"base \u003e= 2.0.0",
-		"? space-age",
-		"? quality"
-	]
+    "name":  "biter-pet",
+    "version":  "0.26.140",
+    "title":  "Bitey",
+    "author":  "Spookynutz",
+    "factorio_version":  "2.0",
+    "dependencies":  [
+                         "base \u003e= 2.0.0",
+                         "? space-age",
+                         "? quality"
+                     ]
 }

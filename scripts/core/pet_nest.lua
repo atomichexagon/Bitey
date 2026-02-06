@@ -18,15 +18,15 @@ local function random_offset(radius)
 end
 
 local function clear_nest_area(surface, position, radius, types)
-	local r = radius or 10
+	local radius = radius or 10
 	local area = {
 		{
-			position.x - r,
-			position.y - r
+			position.x - radius,
+			position.y - radius
 		},
 		{
-			position.x + r,
-			position.y + r
+			position.x + radius,
+			position.y + radius
 		}
 	}
 
@@ -35,16 +35,16 @@ local function clear_nest_area(surface, position, radius, types)
 		type = types,
 		area = area
 	}
-	for _, ent in ipairs(entities) do if post_util.distance(ent.position, position) <= r then ent.destroy() end end
+	for _, ent in ipairs(entities) do if post_util.distance(ent.position, position) <= radius then ent.destroy() end end
 
 	-- Throw down some dirt.
 	local tiles = {}
-	for x = position.x - r, position.x + r do
-		for y = position.y - r, position.y + r do
+	for x = position.x - radius, position.x + radius do
+		for y = position.y - radius, position.y + radius do
 			if post_util.distance({
 				x = x,
 				y = y
-			}, position) <= r then
+			}, position) <= radius then
 				tiles[#tiles + 1] = {
 					name = "dirt-5",
 					position = {
@@ -89,7 +89,7 @@ function pet_nest.decorate(surface, position)
 	end
 
 	-- Position "Martha" and "Bruce" corpses.
-	offset = random_offset(4)
+	local offset = random_offset(4)
 	surface.create_entity {
 		name = "medium-biter-corpse",
 		position = {

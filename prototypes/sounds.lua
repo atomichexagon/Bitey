@@ -1,4 +1,3 @@
--- TODO: Add pitch variations for vocalizations (see sound-pitch-variations.docx).
 data:extend({
 	{
 		type = "sound",

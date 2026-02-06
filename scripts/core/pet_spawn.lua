@@ -1,6 +1,7 @@
 local debug = require("scripts.util.debug")
 local pet_nest = require("scripts.core.pet_nest")
 local position = require("scripts.util.position")
+local t = require("scripts.util.text_format")
 
 local SC = require("scripts.constants.spawn") -- Pet spawn constants.
 
@@ -52,26 +53,26 @@ function pet_spawn.choose_orphan_spawn(surface, origin)
 	return fallback_pos
 end
 
-function pet_spawn.spawn_orphan_baby(player, entry)
+function pet_spawn.spawn_orphan_baby(player, entry, generate_decoratives)
 	local surface = player.surface
 
 	-- Store orphan respawn point in the event pet dies.
 	if not storage.pet_spawn_point then storage.pet_spawn_point = pet_spawn.choose_orphan_spawn(surface, player.position) end
 
 	-- Ensure the tile is actually walkable.
-	local pos = surface.find_non_colliding_position("pet-biter-baby", storage.pet_spawn_point, 10, 0.5)
+	local position = surface.find_non_colliding_position("pet-biter-baby", storage.pet_spawn_point, 10, 0.5)
 
-	if not pos then
+	if not position then
 		debug.info("Could not find a valid spawn location for the orphaned biter.")
 		return
 	end
 
-	pet_nest.decorate(surface, storage.pet_spawn_point)
+	if generate_decoratives then pet_nest.decorate(surface, storage.pet_spawn_point) end
 
 	-- Spawn the orphaned pet.
 	local pet = surface.create_entity {
 		name = "pet-biter-baby",
-		position = pos,
+		position = position,
 		force = game.forces["pet_orphan"]
 	}
 
@@ -86,22 +87,21 @@ end
 
 function pet_spawn.spawn_pet_for_player(player, entry)
 	local player_index = player.index
-	local current_tick = game.tick
-	if 1 == 1 then return end
+	local now = game.tick
 
 	-- Check if biter was alive but is now missing (despawn and bug recovery).
 	-- Assume that if entry.unit is nil and entry.was_alive is true, it's a lost pet.
 	if entry.was_alive and (not entry.unit or not entry.unit.valid) then
 		local tier = entry.biter_tier or "pet-biter-baby"
-		local pos = player.surface.find_non_colliding_position(tier, player.position, 15, 0.5)
+		debug.info(string.format("Recovering lost pet %s", t.f(tier, "f")))
+		local position = player.surface.find_non_colliding_position(tier, player.position, 15, 0.5)
 
-		if pos then
+		if position then
 			entry.unit = player.surface.create_entity {
 				name = tier,
-				position = pos,
+				position = position,
 				force = player.force
 			}
-			debug.info("Recovered lost pet.")
 			return
 		end
 	end
@@ -109,14 +109,15 @@ function pet_spawn.spawn_pet_for_player(player, entry)
 	-- If the biter is was legitimately killed, spawn a new one after one game day.
 	if not (entry.unit and entry.unit.valid) then
 		entry.was_alive = false
-
 		local last_death = entry.last_death_tick or 0
-		if (current_tick - last_death) >= SC.TICKS_PER_DAY then
-			pet_spawn.spawn_orphan_baby(player, entry)
+		--		if (now - last_death) >= SC.TICKS_PER_DAY then
+		if (now - last_death) >= 300 then
+			debug.info("Spawning replacement orphan.")
+			pet_spawn.spawn_orphan_baby(player, entry, false)
 			entry.was_alive = true
 		else
-			local remaining = math.floor((SC.TICKS_PER_DAY - (current_tick - last_death)) / 60)
-			debug.info("Next pet spawn will trigger in " .. remaining .. " seconds.")
+			local remaining = math.floor((SC.TICKS_PER_DAY - (now - last_death)) / 60)
+			debug.trace(string.format("Pet spawn will trigger in %s seconds.", t.f(remaining, "f")))
 		end
 	end
 end

@@ -18,14 +18,14 @@ local function upgrade_pet(entry, new_name)
 	if old.name == new_name then return end
 
 	local surface = old.surface
-	local pos = old.position
+	local position = old.position
 	local force = old.force
 
 	old.destroy()
 
 	local new_pet = surface.create_entity {
 		name = new_name,
-		position = pos,
+		position = position,
 		force = force
 	}
 
@@ -46,13 +46,13 @@ function pet_growth.try_grow(player_index, entry)
 	if hunger >= 15 then return end
 
 	local surface = pet.surface
-	local evo = game.forces.enemy.get_evolution_factor(surface)
+	local evolution_factor = game.forces.enemy.get_evolution_factor(surface)
 	local current = pet.name
 	local tier = get_tier_index(current)
 
 	-- Baby to Small biter.
 	if current == "pet-biter-baby" then
-		if evo > GC.BABY_TO_SMALL_THRESHOLD and math.random() < GC.PET_GROWTH_CHANCE then
+		if evolution_factor > GC.BABY_TO_SMALL_THRESHOLD and math.random() < GC.PET_GROWTH_CHANCE then
 			upgrade_pet(entry, "pet-biter-small")
 			entry.biter_tier = "pet-biter-small"
 			entry.biter_tier_friendly_name = "pet_biter_small"
@@ -62,7 +62,7 @@ function pet_growth.try_grow(player_index, entry)
 
 	-- Small to Large biter.
 	if current == "pet-biter-small" then
-		if evo > GC.SMALL_TO_LARGE_THRESHOLD and math.random() < GC.PET_GROWTH_CHANCE then
+		if evolution_factor > GC.SMALL_TO_LARGE_THRESHOLD and math.random() < GC.PET_GROWTH_CHANCE then
 			upgrade_pet(entry, "pet-biter-large")
 			entry.biter_tier = "pet-biter-large"
 			entry.biter_tier_friendly_name = "pet_biter_large"
