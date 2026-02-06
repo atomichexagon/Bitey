@@ -16,9 +16,7 @@ dbg.level = {
 
 -- Debug levels reverse map.
 dbg.level_name = {}
-for name, value in pairs(dbg.level) do
-	dbg.level_name[value] = name
-end
+for name, value in pairs(dbg.level) do dbg.level_name[value] = name end
 
 -- Default debug level.
 dbg.current_level = dbg.level.error
@@ -31,16 +29,12 @@ local function safe_print(key, msg)
 
 	-- Rate limit by key.
 	if DC.DEBUG_ENABLE_RATE_LIMITER then
-		if last_print_tick[key] and tick - last_print_tick[key] < DC.DEBUG_RATE_LIMIT then
-			return
-		end
+		if last_print_tick[key] and tick - last_print_tick[key] < DC.DEBUG_RATE_LIMIT then return end
 	end
 
 	last_print_tick[key] = tick
 
-	if game and game.print then
-		game.print(msg)
-	end
+	if game and game.print then game.print(msg) end
 end
 
 local function get_caller_module()
@@ -77,15 +71,14 @@ local function get_caller_module()
 end
 
 local function log(level, message)
-	if level > dbg.current_level then
-		return
-	end
+	if level > dbg.current_level then return end
 
 	local module_info = get_caller_module()
 	local tick = game and game.tick or 0
 	local formatted_prefix = string.format("%s %s %s.%s", DC.ICON,
-			(level < 0 and t.f("COMMAND", "a")) or (level == dbg.level.error and t.f("ERROR", "e")) or (level == dbg.level.warn and t.f("WARN", "w")) or
-					(level == dbg.level.info and t.f("INFO", "i")) or t.f("TRACE", "t"), t.f(module_info.filename, "c"), t.f(module_info.func .. "()", "f"))
+			(level < 0 and t.f("COMMAND", "a")) or (level == dbg.level.error and t.f("ERROR", "e")) or
+					(level == dbg.level.warn and t.f("WARN", "w")) or (level == dbg.level.info and t.f("INFO", "i")) or
+					t.f("TRACE", "t"), t.f(module_info.filename, "c"), t.f(module_info.func .. "()", "f"))
 	local formatted_message = string.format("%s", t.f(message))
 	local assembled_console_line = string.format("%s %s", formatted_prefix, formatted_message)
 	safe_print(module_info.filename, assembled_console_line)
@@ -142,14 +135,17 @@ function dbg.set_level(new_level, player)
 
 	if (player and player.valid) then
 		update_player_speed(player)
-		player.insert{name = "raw-fish", count = 50}
+		player.insert {
+			name = "raw-fish",
+			count = 50
+		}
 	end
 
 	local level_color = get_font_color_from_level(new_level)
 	local uc_level_name = string.upper(dbg.level_name[dbg.current_level])
-	local formatted_message = string.format(t.f("Debug logging level set to %s - [color=%s]%s[/color] "), tostring(dbg.current_level), level_color,
-			uc_level_name)
-	dbg.always(formatted_message)
+	local formatted_message = string.format(t.f("%s Debug logging level set to %s - [color=%s]%s[/color] "), DC.ICON,
+			tostring(dbg.current_level), level_color, uc_level_name)
+	game.print(formatted_message)
 end
 
 return dbg

@@ -1,4 +1,4 @@
-return {
+local BITER_MAP = {
 	pet_biter_baby = {
 		game_eq = "small-biter",
 		sound = "biter-roar"
@@ -96,4 +96,8 @@ return {
 		game_eq = "behemoth-spitter",
 		sound = "spitter-call-behemoth"
 	}
+}
+
+return {
+	BITER_MAP = BITER_MAP
 }

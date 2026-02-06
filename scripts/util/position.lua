@@ -30,9 +30,7 @@ function position.get_direction_of_position(origin, destination)
 	end
 
 	-- Intermediate direction.
-	if vertical and horizontal then
-		return vertical .. horizontal
-	end
+	if vertical and horizontal then return vertical .. horizontal end
 
 	-- Cardinal direction.
 	return vertical or horizontal or "here"

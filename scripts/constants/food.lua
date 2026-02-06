@@ -14,8 +14,8 @@ local FOOD_DEFINITIONS = {
 		evolution = 0,
 		friendship = 1,
 		happiness = 1,
-		hunger = -2,
-		morph = -5,
+		hunger = -1,
+		morph = 0,
 		thirst = -10,
 		tiredness = 0
 	},
@@ -26,8 +26,18 @@ local FOOD_DEFINITIONS = {
 		happiness = 0,
 		hunger = 0,
 		morph = 5,
-		thirst = -10,
-		tiredness = 0
+		thirst = 10,
+		tiredness = 2
+	},
+	["stone"] = {
+		boredom = -1,
+		evolution = 0,
+		friendship = 0,
+		happiness = 0,
+		hunger = 0,
+		morph = -5,
+		thirst = 10,
+		tiredness = 2
 	},
 	["uranium-238"] = {
 		boredom = 1,

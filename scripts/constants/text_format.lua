@@ -7,7 +7,7 @@ return {
 	-- Text formatting and debugging colors.
 	MESSAGE_COLOR = "#dddddd", -- m
 	LABEL_COLOR = "#aaaaaa", -- l
-	ALWAYS_COLOR = "#6600ff", -- a
+	ALWAYS_COLOR = "#ff00ff", -- a
 	NONE_COLOR = "#000000", -- n"
 	ERROR_COLOR = "#ff0000", -- r
 	WARN_COLOR = "#ffff00", -- w

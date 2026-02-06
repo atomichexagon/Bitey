@@ -4,21 +4,24 @@
 -- TODO: Biter should only attack lower weaker biters unless it is behemoth tier.
 -- TODO: Biter happiness should go to zero and they should stay by corpse until it is picked up.
 local debug = require("scripts.util.debug")
-local pet_state = require("scripts.core.pet_state")
-local position_util = require("scripts.util.position")
-local pet_visuals = require("scripts.core.pet_visuals")
-local pet_growth = require("scripts.core.pet_growth")
-local pet_spawn = require("scripts.core.pet_spawn")
 local notifications = require("scripts.util.notifications")
-local pet_events = require("scripts.core.pet_events")
+local pet_behavior = require("scripts.core.pet_behavior")
+local pet_growth = require("scripts.core.pet_growth")
+local pet_reactions = require("scripts.core.pet_reactions")
+local pet_spawn = require("scripts.core.pet_spawn")
+local pet_state = require("scripts.core.pet_state")
+local pet_visuals = require("scripts.core.pet_visuals")
+local position_util = require("scripts.util.position")
 local t = require("scripts.util.text_format")
 
-local DC = require("scripts.constants.debug") -- Debug constants.
-local LC = require("scripts.constants.lifecycle") -- Pet lifecycle constants.
-local BM = require("scripts.constants.biters") -- Pet tier to biter map.
-local TF = require("scripts.constants.text_format") -- Text color constants.
+local DC = require("scripts.constants.debug")
+local LC = require("scripts.constants.lifecycle")
+local TF = require("scripts.constants.text_format")
 
-local FC = require("scripts.constants.food") -- Food constants.
+local BITER_CONSTANTS = require("scripts.constants.biters")
+local BITER_MAP = BITER_CONSTANTS.BITER_MAP
+
+local FC = require("scripts.constants.food")
 local FOOD_DEFINITIONS = FC.FOOD_DEFINITIONS
 
 local pet_lifecycle = {}
@@ -41,9 +44,7 @@ function pet_lifecycle.get_pet_entry(player_index)
 end
 
 local function find_nearest_food(pet)
-	if not (pet and pet.valid) then
-		return nil
-	end
+	if not (pet and pet.valid) then return nil end
 
 	local surface = pet.surface
 	local pos = pet.position
@@ -114,6 +115,7 @@ local function handle_feeding_behavior(player_index, player, pet, entry)
 		target.destroy()
 
 		pet_state.ate_food(player_index, entry, food_item)
+		pet_reactions.trigger(player_index, entry, food_item)
 		pet_state.set_feeding_target(player_index, nil)
 		return true
 	end
@@ -129,37 +131,27 @@ local function handle_feeding_behavior(player_index, player, pet, entry)
 end
 
 function pet_lifecycle.on_tick(event)
-	if (event.tick % 30) ~= 0 then
-		return
-	end
+	if (event.tick % 30) ~= 0 then return end
 
-	if not storage.biter_pet then
-		return
-	end
+	if not storage.biter_pet then return end
 	for player_index, entry in pairs(storage.biter_pet) do
 		pet_lifecycle.process_pet(player_index, entry)
-		pet_events.process_events(player_index, entry)
+		pet_behavior.process_events(player_index, entry)
 	end
 end
 
 function pet_lifecycle.process_pet(player_index, entry)
 	local player = game.get_player(player_index)
-	if not pet_lifecycle.is_player_valid(player) then
-		return
-	end
+	if not pet_lifecycle.is_player_valid(player) then return end
 
 	local pet = pet_lifecycle.ensure_pet(player_index, entry)
-	if not pet then
-		return
-	end
+	if not pet then return end
 
 	-- Update hunger value.
 	pet_state.tick_pet_state(player_index, entry)
 
 	-- Skip other behaviors if paused.
-	if pet_lifecycle.handle_pause(player_index, entry, pet) then
-		return
-	end
+	if pet_lifecycle.handle_pause(player_index, entry, pet) then return end
 
 	local target = pet_state.get_feeding_target(player_index)
 	pet_lifecycle.evaluate_target(player_index, pet, target)
@@ -210,9 +202,7 @@ function pet_lifecycle.state_idle(player_index, player, pet, entry)
 
 	local destination = player.position
 
-	if entry.is_orphaned then
-		desintation = storage.pet_spawn_point
-	end
+	if entry.is_orphaned then desintation = storage.pet_spawn_point end
 
 	pet.commandable.set_command {
 		type = defines.command.go_to_location,
@@ -270,7 +260,7 @@ local function check_for_adoption(player, player_index, pet, entry)
 			debug.info("Pet has been successfully adopted.")
 			notifications.notify(player, pet, {
 				type = "entity",
-				name = BM[entry.biter_tier_friendly_name].game_eq
+				name = BITER_MAP[entry.biter_tier_friendly_name].game_eq
 			}, "It seems attached to you now.", "utility/achievement_unlocked")
 			return true
 		end
@@ -313,9 +303,7 @@ function pet_lifecycle.state_paused(player_index, player, pet)
 		distraction = defines.distraction.none
 	}
 
-	if not pet_state.is_paused(player_index) then
-		pet_state.set_state(player_index, "idle")
-	end
+	if not pet_state.is_paused(player_index) then pet_state.set_state(player_index, "idle") end
 end
 
 function pet_lifecycle.state_eat(player_index, player, pet)
@@ -354,9 +342,7 @@ end
 
 function pet_lifecycle.on_entity_died(event)
 	local entity = event.entity
-	if not (entity and entity.valid and entity.type == "unit") then
-		return
-	end
+	if not (entity and entity.valid and entity.type == "unit") then return end
 
 	for player_index, entry in pairs(storage.biter_pet) do
 		if entry.unit == entity then
@@ -369,7 +355,7 @@ function pet_lifecycle.on_entity_died(event)
 			if player then
 				notifications.notify(player, pet, {
 					type = "entity",
-					name = BM[entry.biter_tier_friendly_name].game_eq
+					name = BITER_MAP[entry.biter_tier_friendly_name].game_eq
 				}, "Your faithful companion has died. Perhaps a new friend may appear one day.", "utility/achievement_unlocked")
 			end
 			break
@@ -379,9 +365,7 @@ end
 
 function pet_lifecycle.debug_dump(player)
 	-- Valdidate player and pet.
-	if not (player and player.valid) then
-		game.print(string.format("%s %s", DC.ICON, t.f("No valid player.", "l")))
-	end
+	if not (player and player.valid) then game.print(string.format("%s %s", DC.ICON, t.f("No valid player.", "l"))) end
 
 	storage.biter_pet = storage.biter_pet or {}
 	local entry = storage.biter_pet[player.index]
@@ -404,9 +388,7 @@ function pet_lifecycle.debug_dump(player)
 	local h_color = TF.FULL_HEALTH
 
 	if (pet.health and pet.prototype and pet.prototype.get_max_health) then
-		if pet.health < pet.prototype.get_max_health() then
-			local h_color = TFS.DAMAGED_HEALTH
-		end
+		if pet.health < pet.prototype.get_max_health() then local h_color = TFS.DAMAGED_HEALTH end
 	end
 
 	local health = string.format("[color=%s]%.1f[/color] | [color=%s]%.1f[/color]", h_color, pet.health or -1,

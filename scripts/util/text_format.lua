@@ -5,11 +5,11 @@ local text_format = {}
 local function bold(text, format)
 
 	if format == "default" then
-		return string.format("[font=%s]%s[/font]", TF.DEFAULT_FONT, text)		
+		return string.format("[font=%s]%s[/font]", TF.DEFAULT_FONT, text)
 	elseif format == "mono" then
 		return string.format("[font=%s]%s[/font]", TF.DEFAULT_MONO_FONT, text)
 	elseif format == "header" then
-		return string.format("[font=%s]%s[/font]", TF.DEFAULT_HEADER_FONT, text)		
+		return string.format("[font=%s]%s[/font]", TF.DEFAULT_HEADER_FONT, text)
 	end
 end
 
@@ -22,7 +22,7 @@ local function color(text, color_group)
 		return string.format("[color=%s]%s[/color]", TF.ALWAYS_COLOR, text)
 	elseif color_group == "n" then
 		return string.format("[color=%s]%s[/color]", TF.NONE_COLOR, text)
-	elseif color_group == "r" then
+	elseif color_group == "e" then
 		return string.format("[color=%s]%s[/color]", TF.ERROR_COLOR, text)
 	elseif color_group == "w" then
 		return string.format("[color=%s]%s[/color]", TF.WARN_COLOR, text)
@@ -62,7 +62,7 @@ end
 
 function text_format.pad(text, pad_length)
 	local visible_length = visible_len(text)
-	local pad_length = math.max(0, pad_length-visible_length)
+	local pad_length = math.max(0, pad_length - visible_length)
 	return string.rep(" ", pad_length) .. text
 end
 

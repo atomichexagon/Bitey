@@ -56,9 +56,7 @@ function pet_spawn.spawn_orphan_baby(player, entry)
 	local surface = player.surface
 
 	-- Store orphan respawn point in the event pet dies.
-	if not storage.pet_spawn_point then
-		storage.pet_spawn_point = pet_spawn.choose_orphan_spawn(surface, player.position)
-	end
+	if not storage.pet_spawn_point then storage.pet_spawn_point = pet_spawn.choose_orphan_spawn(surface, player.position) end
 
 	-- Ensure the tile is actually walkable.
 	local pos = surface.find_non_colliding_position("pet-biter-baby", storage.pet_spawn_point, 10, 0.5)
@@ -89,9 +87,7 @@ end
 function pet_spawn.spawn_pet_for_player(player, entry)
 	local player_index = player.index
 	local current_tick = game.tick
-	if 1 == 1 then
-		return
-	end
+	if 1 == 1 then return end
 
 	-- Check if biter was alive but is now missing (despawn and bug recovery).
 	-- Assume that if entry.unit is nil and entry.was_alive is true, it's a lost pet.

@@ -2,22 +2,23 @@ local debug = require("scripts.util.debug")
 local pet_lifecycle = require("scripts.core.pet_lifecycle")
 local pet_state = require("scripts.core.pet_state")
 local pet_spawn = require("scripts.core.pet_spawn")
-local pet_events = require("scripts.core.pet_events")
+local pet_init = require("scripts.core.pet_init")
+local pet_behavior = require("scripts.core.pet_behavior")
 local pet_visuals = require("scripts.core.pet_visuals")
 local pet_animation = require("scripts.core.pet_animation")
-
-local VC = require("scripts.constants.visuals") -- Visuals constants.
 
 local events = {}
 
 function events.on_init()
-	pet_events.initialize_storage()
-	pet_events.create_orphan_force()
+	pet_init.initialize_storage()
+	pet_init.create_orphan_force()
+	pet_init.check_existing_research()
 end
 
 function events.on_configuration_changed(cfg)
-	pet_events.initialize_storage()
-	pet_events.create_orphan_force()
+	pet_init.initialize_storage()
+	pet_init.create_orphan_force()
+	pet_init.check_existing_research()
 end
 
 function events.on_load()
@@ -48,7 +49,11 @@ end
 
 function events.on_cutscene_cancelled(event)
 	local entry = pet_lifecycle.get_pet_entry(event.player_index)
-	pet_events.record_intro_cinematic_end_tick(event.player_index, entry)
+	pet_behavior.record_intro_cinematic_end_tick(event.player_index, entry)
+end
+
+function events.on_research_finished(event)
+	pet_behavior.on_research_finished(event)
 end
 
 return events

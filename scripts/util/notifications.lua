@@ -10,9 +10,7 @@ function notifications.notify(player, entity, icon, message, sound)
 	end
 
 	debug.info("Alerting player: " .. tostring(message))
-	if entity and entity.valid then
-		player.add_custom_alert(entity, icon, message, false)
-	end
+	if entity and entity.valid then player.add_custom_alert(entity, icon, message, false) end
 end
 
 return notifications
