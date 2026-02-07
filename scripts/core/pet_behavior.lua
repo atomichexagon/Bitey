@@ -74,7 +74,7 @@ function pet_behavior.on_research_finished(event)
 	if tech.name == "fluid-handling" then
 		for _, player in pairs(tech.force.players) do
 			debug.info(string.format("%s %s", "Pet thirst attribute unlocked for player", t.f(player.index, "f")))
-			local s = pet.state.ensure_state(player.index)
+			local s = pet_state.ensure_state(player.index)
 			s.has_fluid_handling = true
 		end
 	end

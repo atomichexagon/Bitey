@@ -10,9 +10,6 @@ local PET_NEEDS = NEEDS_CONSTANTS.NEEDS_CONSTANTS
 local PET_VISUALS_CONSTANTS = require("scripts.constants.visuals")
 local RENDER_SETTINGS = PET_VISUALS_CONSTANTS.RENDER_SETTINGS
 
-local FOOD_CONSTANTS = require("scripts.constants.food")
-local FOOD_DEFINITIONS = FOOD_CONSTANTS.FOOD_DEFINITIONS
-
 local THRESHOLD_CONSTANTS = require("scripts.constants.thresholds")
 local MOOD_THRESHOLDS = THRESHOLD_CONSTANTS.MOOD_THRESHOLDS
 
@@ -36,7 +33,7 @@ local function ensure_state(player_index)
 			tiredness = 0,
 			feeding_target = nil
 		}
-		storage.pet_state[player_index] = s
+		storage.pet_state[player_index] = state
 	else
 		-- NOTE: Stop forgetting to update migrations if you don't want existing saves to break.
 		state.boredom = state.boredom or 50
@@ -47,7 +44,6 @@ local function ensure_state(player_index)
 		state.morph = state.morph or 0
 		state.thirst = state.thirst or 100
 		state.tiredness = state.tiredness or 0
-		if state.feeding_target == nil then state.feeding_target = nil end
 	end
 
 	return state
@@ -78,6 +74,7 @@ end
 
 function pet_state.set_behavior(player_index, new_behavior)
 	local state = ensure_state(player_index)
+	debug.render_pet_behavior(player_index, new_behavior)
 	state.behavior = new_behavior
 end
 
@@ -331,6 +328,7 @@ function pet_state.set_hunger(player_index, value)
 end
 
 function pet_state.add_hunger(player_index, delta)
+	if not delta then return end
 	local state = ensure_state(player_index)
 	delta = delta or PET_NEEDS.HUNGER_INCREMENT
 	local new_hunger = math.max(0, math.min(100, state.hunger + (delta)))
@@ -350,42 +348,6 @@ function pet_state.get_feeding_target(player_index)
 	return state.feeding_target
 end
 
-function pet_state.ate_food(player_index, entry, food)
-	debug.info(string.format("%s %s", "Eating food item ", food))
-
-	local food_mod_table = FOOD_DEFINITIONS[food]
-	if not food_mod_table then
-		debug.warn(string.format("%s %s", "FOOD_DEFINITIONS missing entry for: ", t.f(food, "w")))
-		return
-	end
-
-	local state = ensure_state(player_index)
-
-	-- Mood scaling based on hunger severity.
-	local mood_bonus = math.floor((state.hunger ^ 1.2) * 0.025)
-
-	local bordome = food_mod_table.boredom or 0
-	local evolution = food_mod_table.evolution or 0
-	local friendship = food_mod_table.friendship or 0
-	local happiness = food_mod_table.happiness or 0
-	local hunger = food_mod_table.hunger or 0
-	local morph = food_mod_table.morph or 0
-	local thirst = food_mod_table.thirst or 0
-	local tiredness = food_mod_table.tiredness or 0
-
-	-- Mood state effects.
-	pet_state.add_boredom(player_index, food_mod_table.boredom - mood_bonus)
-	pet_state.add_friendship(player_index, food_mod_table.friendship + mood_bonus)
-	pet_state.add_happiness(player_index, food_mod_table.happiness + mood_bonus)
-
-	-- Pysiological state effects.
-	pet_state.add_evolution(player_index, food_mod_table.evolution)
-	pet_state.add_hunger(player_index, food_mod_table.hunger)
-	pet_state.add_morph(player_index, food_mod_table.morph)
-	pet_state.add_thirst(player_index, food_mod_table.thirst)
-	pet_state.add_tiredness(player_index, food_mod_table.tiredness)
-end
-
 -- Thirst functions.
 function pet_state.get_thirst(player_index)
 	local state = ensure_state(player_index)
@@ -398,6 +360,7 @@ function pet_state.set_thirst(player_index, value)
 end
 
 function pet_state.add_thirst(player_index, delta)
+	if not delta then return end
 	local state = ensure_state(player_index)
 	local new_thirst = math.max(0, math.min(100, state.thirst + delta))
 	debug.info(string.format("[color=%s]Thirst[/color] %s from %s to %s.", TF.INFO_COLOR,
@@ -417,11 +380,12 @@ function pet_state.set_tiredness(player_index, value)
 end
 
 function pet_state.add_tiredness(player_index, delta)
+	if not delta then return end
 	local state = ensure_state(player_index)
 	local new_tiredness = math.max(0, math.min(100, state.tiredness + delta))
 	debug.info(string.format("[color=%s]Tireness[/color] %s from %s to %s.", TF.INFO_COLOR,
 			(delta > 0 and "increased") or "decreased", state.tiredness, new_tiredness))
-	state.thirst = new_tiredness
+	state.tiredness = new_tiredness
 end
 
 -- Morph functions.
@@ -436,6 +400,7 @@ function pet_state.set_morph(player_index, value)
 end
 
 function pet_state.add_morph(player_index, delta)
+	if not delta then return end
 	local state = ensure_state(player_index)
 	local new_morph = math.max(0, math.min(100, state.morph + delta))
 	debug.info(string.format("[color=%s]Morph[/color] %s from %s to %s.", TF.INFO_COLOR,
@@ -455,6 +420,7 @@ function pet_state.set_evolution(player_index, value)
 end
 
 function pet_state.add_evolution(player_index, delta)
+	if not delta then return end
 	local state = ensure_state(player_index)
 	local new_evolution = math.max(0, math.min(100, state.evolution + delta))
 	debug.info(string.format("[color=%s]Evolution[/color] %s from %s to %s.", TF.INFO_COLOR,
@@ -474,6 +440,7 @@ function pet_state.set_boredom(player_index, value)
 end
 
 function pet_state.add_boredom(player_index, delta)
+	if not delta then return end
 	local state = ensure_state(player_index)
 	local new_boredom = math.max(0, math.min(100, state.boredom + delta))
 	debug.info(string.format("[color=%s]Boredom[/color] %s from %s to %s.", TF.INFO_COLOR,
@@ -493,6 +460,7 @@ function pet_state.set_happiness(player_index, value)
 end
 
 function pet_state.add_happiness(player_index, delta)
+	if not delta then return end
 	local state = ensure_state(player_index)
 	local new_happiness = math.max(0, math.min(100, state.happiness + delta))
 	debug.info(string.format("[color=%s]Happiness[/color] %s from %s to %s.", TF.INFO_COLOR,
@@ -512,6 +480,7 @@ function pet_state.set_friendship(player_index, value)
 end
 
 function pet_state.add_friendship(player_index, delta)
+	if not delta then return end
 	local state = ensure_state(player_index)
 	local new_friendship = math.max(0, math.min(100, state.friendship + delta))
 	debug.info(string.format("[color=%s]Friendship[/color] %s from %s to %s.", TF.INFO_COLOR,

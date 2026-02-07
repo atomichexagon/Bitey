@@ -217,6 +217,23 @@ local FOOD_REACTIONS = {
 	}
 }
 
+local COMBAT_REACTIONS = {
+	["cowardice"] = {
+		emotes = {
+			{
+				name = "attack",
+				fast_render = true
+			},
+			{
+				name = "very_sad",
+				fast_render = false
+			}
+		}
+	},
+}
+
 return {
-	FOOD_REACTIONS = FOOD_REACTIONS
+	FOOD_REACTIONS = FOOD_REACTIONS,
+	FOOD_DEFINITIONS = FOOD_REACTIONS,
+	COMBAT_REACTIONS = COMBAT_REACTIONS
 }

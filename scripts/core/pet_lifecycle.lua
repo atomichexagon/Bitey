@@ -11,17 +11,18 @@ local pet_spawn = require("scripts.core.pet_spawn")
 local pet_state = require("scripts.core.pet_state")
 local pet_visuals = require("scripts.core.pet_visuals")
 local position_util = require("scripts.util.position")
+local pet_modifiers = require("scripts.core.pet_modifiers")
+
 local t = require("scripts.util.text_format")
 
 local DC = require("scripts.constants.debug")
 local LC = require("scripts.constants.lifecycle")
 local TF = require("scripts.constants.text_format")
+local REACTION_CONSTANTS = require("scripts.constants.reactions")
+local FOOD_DEFINITIONS = REACTION_CONSTANTS.FOOD_DEFINITIONS
 
 local BITER_CONSTANTS = require("scripts.constants.biters")
 local BITER_MAP = BITER_CONSTANTS.BITER_MAP
-
-local FC = require("scripts.constants.food")
-local FOOD_DEFINITIONS = FC.FOOD_DEFINITIONS
 
 local pet_lifecycle = {}
 
@@ -47,7 +48,6 @@ local function find_nearest_food(pet)
 
 	local surface = pet.surface
 	local position = pet.position
-
 	-- Detect items on ground near pet.
 	local items = surface.find_entities_filtered {
 		position = position,
@@ -62,7 +62,6 @@ local function find_nearest_food(pet)
 		if item.valid and item.stack and item.stack.valid_for_read then
 			local name = item.stack.name
 			local food_type = FOOD_DEFINITIONS[name]
-
 			if food_type then
 				local distance_squared = position_util.distance_squared(position, item.position)
 				if distance_squared < best_distance_squared then
@@ -78,7 +77,6 @@ end
 
 local function handle_feeding_behavior(player_index, player, pet, entry)
 	local target = pet_state.get_feeding_target(player_index)
-
 	-- Food disappeared.
 	if not (target and target.valid) then
 		pet_state.set_feeding_target(player_index, nil)
@@ -105,9 +103,8 @@ local function handle_feeding_behavior(player_index, player, pet, entry)
 
 		-- Eat the food.
 		target.destroy()
-
-		pet_state.ate_food(player_index, entry, food_item)
-		pet_reactions.trigger(player_index, entry, food_item)
+		pet_modifiers.apply_food_modifiers(player_index, entry, food_item)
+		pet_reactions.food_trigger(player_index, entry, food_item)
 		pet_state.set_feeding_target(player_index, nil)
 		return true
 	end
@@ -116,7 +113,7 @@ local function handle_feeding_behavior(player_index, player, pet, entry)
 	pet.commandable.set_command {
 		type = defines.command.go_to_location,
 		destination = target.position,
-		radius = LC.EAT_RADIUS * 0.5,
+		radius = LC.EAT_RADIUS,
 		distraction = defines.distraction.none
 	}
 	return false
@@ -140,9 +137,12 @@ function pet_lifecycle.process_pet(player_index, entry)
 	local pet = pet_lifecycle.ensure_pet(player_index, entry)
 	if not pet then return end
 
+	debug.visualize_behavioral_radii(player_index)
+
 	-- Combat branch.
 	local behavior = pet_state.get_behavior(player_index)
 	if behavior == "flee" then
+		debug.trace(string.format("Took process branch %s", t.f("FLEE", "f")))
 		debug.trace("Pet taking flee branch.")
 		pet_lifecycle.state_flee(player_index, player, pet, entry)
 		return
@@ -153,6 +153,7 @@ function pet_lifecycle.process_pet(player_index, entry)
 
 	behavior = pet_state.get_behavior(player_index)
 	if behavior == "attack" then
+		debug.trace(string.format("Took process branch %s", t.f("ATTACK", "f")))
 		debug.trace("Pet taking attack branch.")
 		pet_lifecycle.state_attack(player_index, player, pet)
 		return
@@ -160,33 +161,43 @@ function pet_lifecycle.process_pet(player_index, entry)
 
 	-- Pause branch.
 	pet_state.tick_pet_state(player_index, entry)
-	if pet_lifecycle.handle_pause(player_index, entry, pet) then return end
+	if pet_lifecycle.handle_pause(player_index, entry, pet) then
+		debug.trace(string.format("Took process branch %s", t.f("PAUSE", "f")))
+		return
+	end
 
 	-- Feed and follow branch.
 	local target = pet_state.get_feeding_target(player_index)
 	pet_lifecycle.evaluate_target(player_index, pet, target)
 	behavior = pet_state.get_behavior(player_index)
 	if behavior == "seek_food" then
+		debug.trace(string.format("Took process branch %s", t.f("SEEK_FOOD", "f")))
 		return pet_lifecycle.state_seek_food(player_index, player, pet, entry)
 	elseif behavior == "eat" then
+		debug.trace(string.format("Took process branch %s", t.f("EAT", "f")))
 		return pet_lifecycle.state_eat(player_index, player, pet)
 	elseif behavior == "follow" then
+		debug.trace(string.format("Took process branch %s", t.f("FOLLOW", "f")))
 		return pet_lifecycle.state_follow(player_index, player, pet, entry)
 	elseif behavior == "idle" then
+		debug.trace(string.format("Took process branch %s", t.f("IDLE", "f")))
 		return pet_lifecycle.state_idle(player_index, player, pet, entry)
 	end
 
 	-- Fallback behavior.
+	debug.trace(string.format("Took process branch %s", t.f("FALLBACK", "f")))
 	pet_state.set_behavior(player_index, "idle")
 	pet_lifecycle.state_idle(player_index, player, pet, entry)
 end
 
+
 function pet_lifecycle.evaluate_target(player_index, pet, target)
 	if not (target and target.valid) then
-		target = find_nearest_food(pet)
-		if target then
-			pet_state.set_feeding_target(player_index, target)
+		local feeding_target = find_nearest_food(pet)
+		if feeding_target then
+			pet_state.set_feeding_target(player_index, feeding_target) -- Fixed variable
 			pet_state.set_behavior(player_index, "seek_food")
+			debug.render_path_to_target(player_index, pet, feeding_target)
 		end
 	end
 end
@@ -285,13 +296,6 @@ function pet_lifecycle.state_seek_food(player_index, player, pet, entry)
 		pet_state.set_behavior(player_index, "eat")
 		return
 	end
-
-	pet.commandable.set_command {
-		type = defines.command.go_to_location,
-		destination = target.position,
-		radius = LC.EAT_RADIUS,
-		distraction = defines.distraction.none
-	}
 end
 
 function pet_lifecycle.state_paused(player_index, player, pet)
@@ -394,9 +398,7 @@ function pet_lifecycle.state_flee(player_index, player, pet, entry)
 
 	if not state.flee_started_at then
 		state.fleet_started_at = game.tick
-		if emote_state.active_type ~= "forced" then
-			pet_state.force_emote(player_index, entry, "scared")
-		end
+		if emote_state.active_type ~= "forced" then pet_state.force_emote(player_index, entry, "scared") end
 	end
 
 	local target = pet_state.get_enemy_target(player_index)
@@ -420,7 +422,8 @@ function pet_lifecycle.state_flee(player_index, player, pet, entry)
 		debug.info(string.format("Safe distance reached from target %s", t.f(target.name, "f")))
 		pet_state.clear_attack_target(player_index)
 		pet_state.set_behavior(player_index, "follow")
-		pet_state.force_emote(player_index, entry, "very_sad")
+		pet_modifiers.apply_cowardice_modifiers(player_index, entry)
+		pet_reactions.combat_trigger(player_index, entry, "cowardice")
 		return
 	end
 
@@ -440,6 +443,7 @@ function pet_lifecycle.on_entity_died(event)
 	for player_index, entry in pairs(storage.biter_pet) do
 		if entry.unit == entity then
 			debug.info("Pet death event has been triggered.");
+			local pet = entry.unit
 			entry.unit = nil
 			entry.was_alive = false
 			entry.last_death_tick = game.tick -- Record the time of death
@@ -492,7 +496,7 @@ function pet_lifecycle.debug_dump(player)
 	local pet_position = string.format("%s %s", t.fm("Position:", "l"), t.fm(position, "m", 1))
 	local pet_distance = string.format("%s %s", t.fm("Distance:", "l"), t.fm(distance, "m", 1))
 	local pet_health = string.format("%s %s", t.fm("Health:", "l"), t.fm(health, "m", 1))
-	return string.format("%s\n%s\n%s\n%s\n%s", pet_name, pet_type, pet_type, pet_position, pet_distance, pet_health)
+	return string.format("%s\n%s\n%s\n%s\n%s", pet_name, pet_type, pet_position, pet_distance, pet_health)
 end
 
 return pet_lifecycle

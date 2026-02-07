@@ -7,8 +7,8 @@ local t = require("scripts.util.text_format")
 local DC = require("scripts.constants.debug") -- Debug constants.
 
 -- Console commands.
-commands.add_command("bpstatus",
-		DC.ICON .. string.format("%s %s", DC.ICON, t.f("Show pet status for the calling player.")), function(cmd)
+commands.add_command("bpstatus", string.format("%s %s", DC.ICON, t.f("Show pet status for the calling player.")),
+		function(cmd)
 			local player = game.get_player(cmd.player_index)
 			if not player then return end
 
@@ -19,14 +19,25 @@ commands.add_command("bpstatus",
 			game.print(string.format("%s%s\n%s\n%s", DC.ICON, t.fh("Pet state:", "i"), ps_dump, pl_dump))
 		end)
 
-commands.add_command("bpdebug", DC.ICON .. string.format("%s %s", DC.ICON, t.f("Set debug level for biter-pet mod.")),
+commands.add_command("bpdebug", string.format("%s %s", DC.ICON, t.f("Set debug level for biter-pet mod.")),
 		function(cmd)
 			local player = game.get_player(cmd.player_index)
-			local lvl = tonumber(cmd.parameter)
-			if lvl then
-				debug.set_level(lvl, player)
+			local level = tonumber(cmd.parameter)
+			if level then
+				debug.set_level(level, player)
 			else
 				game.print(string.format("%s %s %s", DC.ICON, t.f("Usage:", "l"), t.f("/bpdebug [0-4]")))
+			end
+		end)
+
+commands.add_command("bpvisual", string.format("%s %s", DC.ICON, t.f("Visualize pet triggers, pathing and behaviors.")),
+		function(cmd)
+			local player = game.get_player(cmd.player_index)
+			local enabled = debug.toggle_visualizer()
+			if enabled then
+				game.print(string.format("%s %s %s", DC.ICON, "Visualizer", t.f("enabled", "f")))
+			else
+				game.print(string.format("%s %s %s", DC.ICON, "Visualizer", t.f("disabled", "e")))
 			end
 		end)
 

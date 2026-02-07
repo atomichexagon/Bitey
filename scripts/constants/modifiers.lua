@@ -1,4 +1,6 @@
-local FOOD_DEFINITIONS = {
+local MOOD_BONUS_SCALER = 25
+
+local FOOD_MODIFIERS = {
 	["raw-fish"] = {
 		boredom = -1,
 		evolution = 0,
@@ -181,6 +183,21 @@ local FOOD_DEFINITIONS = {
 	}
 }
 
+local COMBAT_MODIFIERS = {
+	["cowardice"] = {
+		boredom = -12,
+		evolution = 0,
+		friendship = 0,
+		happiness = -8,
+		hunger = 12,
+		morph = 0,
+		thirst = 6,
+		tiredness = 10
+	}
+}
+
 return {
-	FOOD_DEFINITIONS = FOOD_DEFINITIONS
+	MOOD_BONUS_SCALER = MOOD_BONUS_SCALER,
+	FOOD_MODIFIERS = FOOD_MODIFIERS,
+	COMBAT_MODIFIERS = COMBAT_MODIFIERS
 }

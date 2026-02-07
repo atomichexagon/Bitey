@@ -2,6 +2,7 @@ local t = require("scripts.util.text_format")
 
 local DC = require("scripts.constants.debug") -- Debug constants.
 local TF = require("scripts.constants.text_format") -- Text color constants.
+local LC = require("scripts.constants.lifecycle")
 
 local pet_debug = {}
 
@@ -14,6 +15,7 @@ pet_debug.level = {
 	trace = 4
 }
 
+pet_debug.visualizers_enabled = DC.DEBUG_VISUALIZERS_ENABLED
 pet_debug.level_name = {}
 
 -- Debug levels reverse map.
@@ -145,6 +147,117 @@ function pet_debug.set_level(new_level, player)
 	local formatted_message = string.format(t.f("%s Debug logging level set to %s - [color=%s]%s[/color] "), DC.ICON,
 			tostring(pet_debug.current_level), level_color, uc_level_name)
 	game.print(formatted_message)
+end
+
+function pet_debug.render_path_to_target(player_index, pet, target)
+	if not pet_debug.visualizers_enabled then return end
+
+	local player = game.get_player(player_index)
+	if not (player and player.valid) then return end
+
+	local entry = storage.biter_pet[player_index]
+	if entry.debug_line then entry.debug_line.destroy() end
+
+	entry.debug_line = rendering.draw_line {
+		color = player.color,
+		width = 3,
+		from = pet,
+		to = target,
+		surface = pet.surface,
+		draw_on_ground = true,
+		time_to_live = 30
+	}
+end
+
+function pet_debug.render_pet_behavior(player_index, behavior)
+	if not pet_debug.visualizers_enabled then return end
+
+	local player = game.get_player(player_index)
+	if not (player and player.valid) then return end
+
+	local entry = storage.biter_pet[player_index]
+	local pet = entry.unit
+	if not (pet and pet.valid) then return end
+
+	if entry.debug_text then entry.debug_text.destroy() end
+
+	local friendly_behavior = string.gsub(behavior:upper(), "_", " ")
+	entry.debug_text = rendering.draw_text {
+		text = friendly_behavior,
+		surface = pet.surface,
+		target = {
+			entity = pet,
+			offset = DC.DEBUG_VISUALIZE_STATE_OFFSET
+		},
+		color = player.color,
+		use_rich_text = true,
+		scale = 0.8,
+		time_to_live = 30
+	}
+end
+
+local function render_circle(entry, pet, radius, color)
+	entry.debug_radius = rendering.draw_circle {
+		color = color,
+		radius = radius,
+		filled = false,
+		width = 1,
+		target = pet,
+		surface = pet.surface,
+		draw_on_ground = true,
+		time_to_live = 30
+	}
+end
+
+function pet_debug.render_behavioral_radius(player_index, pet, radius, radius_type, color)
+	if not pet_debug.visualizers_enabled then return end
+	if not radius then return end
+
+	local player = game.get_player(player_index)
+	if not (player and player.valid) then return end
+
+	local entry = storage.biter_pet[player_index]
+
+	if radius_type == "follow" then
+		if entry.debug_follow_radius then entry.debug_follow_radius.destroy() end
+		render_circle(entry, pet, radius, DC.DEBUG_FOLLOW_RADIUS_COLOR)
+	elseif radius_type == "food_search" then
+		if entry.debug_food_search_radius then entry.debug_food_search_radius.destroy() end
+		render_circle(entry, pet, radius, DC.DEBUG_FOOD_SEARCH_RADIUS_COLOR)
+	elseif radius_type == "eat" then
+		if entry.debug_eat_radius then entry.debug_eat_radius.destroy() end
+		render_circle(entry, pet, radius, DC.DEBUG_EAT_RADIUS_COLOR)
+	elseif radius_type == "attack" then
+		if entry.debug_attack_radius then entry.debug_attack_radius.destroy() end
+		render_circle(entry, pet, radius, DC.DEBUG_ATTACK_RADIUS_COLOR)
+	else
+		if entry.debug_radius then entry.debug_radius.destroy() end
+		render_circle(entry, pet, radius, color or player.color)
+	end
+end
+
+function pet_debug.visualize_behavioral_radii(player_index)
+	if not pet_debug.visualizers_enabled then return end
+	local entry = storage.biter_pet[player_index]
+	local pet = entry.unit
+	if not (pet and pet.valid) then return end
+
+	local follow_radius = LC.FOLLOW_RADIUS_BY_TIER[pet.name] or LC.PET_FOLLOW_RADIUS
+	pet_debug.render_behavioral_radius(player_index, pet, follow_radius, "follow")
+
+	local food_search_radius = LC.FOOD_SEARCH_RADIUS
+	pet_debug.render_behavioral_radius(player_index, pet, food_search_radius, "food_search")
+
+	local eat_radius = LC.EAT_RADIUS
+	pet_debug.render_behavioral_radius(player_index, pet, eat_radius, "eat")
+
+	local attack_radius = LC.PET_ATTACK_RADIUS
+	pet_debug.render_behavioral_radius(player_index, pet, attack_radius, "attack")
+end
+
+function pet_debug.toggle_visualizer()
+	pet_debug.visualizers_enabled = not pet_debug.visualizers_enabled
+	return pet_debug.visualizers_enabled
 end
 
 return pet_debug

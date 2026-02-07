@@ -26,6 +26,18 @@ local function make_pet_variant(base, name, scale_factor)
 		end
 	end
 
+	-- TODO: Get back to testing these properties
+	-- Reconfigure behavioral properties
+	-- pet.attack_parameters.acquisition_fire_range = 0
+	-- pet.attack_parameters.range = 0 -- no change
+	-- pet.distraction_cooldown = 0 -- no change
+	-- pet.ai_settings = {
+	-- 	path_resolution_modifier = 0,
+	-- 	destroy_when_commands_fail = false,
+	-- 	allow_can_open_gate = true,
+	-- 	do_separation = true
+	-- }
+
 	-- Apply visual scaling to all animation states.
 	process_animation(pet.run_animation)
 	process_animation(pet.attack_parameters.animation)

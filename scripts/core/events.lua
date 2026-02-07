@@ -34,8 +34,8 @@ function events.on_player_created(event)
 		storage.pet_spawn_point = pet_spawn.choose_orphan_spawn(player.surface, player.position)
 	end
 
-	-- Spawn the biter.
-	pet_spawn.spawn_orphan_baby(player, entry)
+	-- Spawn the biter and nest.
+	pet_spawn.spawn_orphan_baby(player, entry, true)
 end
 
 function events.on_tick(event)

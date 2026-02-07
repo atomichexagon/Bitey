@@ -14,11 +14,11 @@ return {
 	PET_FLEE_BOREDOM_PENALTY = -15,
 
 	-- Following.
-	PET_FOLLOW_RADIUS = 5.0,
+	PET_FOLLOW_RADIUS = 6.0,
 	FOLLOW_RADIUS_BY_TIER = {
-		["pet-biter-baby"] = 2.0,
-		["pet-biter-small"] = 3.0,
-		["pet-biter-large"] = 5.0
+		["pet-biter-baby"] = 3.0,
+		["pet-biter-small"] = 3.25,
+		["pet-biter-large"] = 3.5
 	},
 
 	-- Bonding.
@@ -26,6 +26,6 @@ return {
 	CHANCE_TO_ADOPT_BITER = 0.50,
 
 	-- Eating.
-	FOOD_SEARCH_RADIUS = 10,
+	FOOD_SEARCH_RADIUS = 8,
 	EAT_RADIUS = 1.5
 }
