@@ -20,6 +20,7 @@ return {
 		["pet-biter-small"] = 3.25,
 		["pet-biter-large"] = 3.5
 	},
+	CHANCE_TO_PAUSE = 0.2,
 
 	-- Bonding.
 	BONDING_HUNGER_THRESHOLD = 25,

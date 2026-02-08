@@ -31,6 +31,7 @@ local function ensure_state(player_index)
 			morph = 0,
 			thirst = 100,
 			tiredness = 0,
+			wake_state = "awake",
 			feeding_target = nil
 		}
 		storage.pet_state[player_index] = state
@@ -44,6 +45,8 @@ local function ensure_state(player_index)
 		state.morph = state.morph or 0
 		state.thirst = state.thirst or 100
 		state.tiredness = state.tiredness or 0
+		state.wake_state = state.wake_state or "awake"
+		state.feeding_target = state.feeding_target or nil
 	end
 
 	return state

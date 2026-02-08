@@ -1,3 +1,4 @@
-require("prototypes.pet_biter_variants")
+require("prototypes.sprites.pet_emotes")
+require("prototypes.units.pet_biter_sleeping")
+require("prototypes.units.pet_biter")
 require("prototypes.sounds")
-require("prototypes.sprites")

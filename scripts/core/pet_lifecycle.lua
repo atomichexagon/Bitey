@@ -137,6 +137,7 @@ function pet_lifecycle.process_pet(player_index, entry)
 	local pet = pet_lifecycle.ensure_pet(player_index, entry)
 	if not pet then return end
 
+	if entry.wake_state == "sleeping" then return end
 	debug.visualize_behavioral_radii(player_index)
 
 	-- Combat branch.
@@ -190,7 +191,6 @@ function pet_lifecycle.process_pet(player_index, entry)
 	pet_lifecycle.state_idle(player_index, player, pet, entry)
 end
 
-
 function pet_lifecycle.evaluate_target(player_index, pet, target)
 	if not (target and target.valid) then
 		local feeding_target = find_nearest_food(pet)
@@ -215,12 +215,27 @@ function pet_lifecycle.state_idle(player_index, player, pet, entry)
 
 	if entry.is_orphaned then destination = storage.pet_spawn_point end
 
-	pet.commandable.set_command {
-		type = defines.command.go_to_location,
-		destination = destination,
-		radius = radius,
-		distraction = defines.distraction.none
-	}
+	-- TODO: Randomize idle state between wandering, pausing and investigating for random intervals.
+	-- TODO: Expand or disable follow radius when investigating.
+	-- TODO: See if stickers apply to unit, create prototype, apply to pet, see if it works, etc.
+	-- TODO: Use set_pause so he doesn't stutter step.
+	local dice_roll = math.random()
+
+	if (dice_roll >= LC.CHANCE_TO_PAUSE) then
+		pet.commandable.set_command {
+			type = defines.command.wander,
+			destination = destination,
+			radius = LC.PET_FOLLOW_RADIUS/1.25,
+			distraction = defines.distraction.none
+		}
+	else
+		pet.commandable.set_command {
+			type = defines.command.stop,
+			destination = destination,
+			radius = LC.PET_FOLLOW_RADIUS/1.25,
+			distraction = defines.distraction.none
+		}
+	end
 end
 
 function pet_lifecycle.is_player_valid(player)
