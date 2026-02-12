@@ -9,8 +9,31 @@ function notifications.notify(player, entity, icon, message, sound)
 		}
 	end
 
-	debug.info("Alerting player: " .. tostring(message))
-	if entity and entity.valid then player.add_custom_alert(entity, icon, message, false) end
+	local character = player.character
+	if character and character.valid then
+
+		local render_id = rendering.draw_text {
+			text = message,
+			surface = player.surface,
+			target = {
+				entity = character,
+				offset = {
+					0.75,
+					-1.5
+				}
+			},
+			color = {
+				player.color.r,
+				player.color.g,
+				player.color.b,
+				1
+			},
+			text_align = "center",
+			use_rich_text = true,
+			scale = 1,
+			time_to_live = 300
+		}
+	end
 end
 
 return notifications

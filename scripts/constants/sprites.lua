@@ -16,6 +16,12 @@ local SPRITE_MAP = {
 	tired = {
 		sprite = "virtual-signal/signal-battery-low"
 	},
+	animated = {
+		sprite = "virtual-signal/signal-battery-mid-level"
+	},
+	energized = {
+		sprite = "virtual-signal/signal-battery-full"
+	},
 	work = {
 		sprite = "virtual-signal/signal-mining"
 	},
@@ -46,6 +52,9 @@ local SPRITE_MAP = {
 	},
 	stone = {
 		sprite = "item/stone"
+	},
+	sulfuric_acid = {
+		sprite = "item/sulfuric-acid-barrel"
 	},
 	-- Feeding emotes.
 	hungry = {
@@ -108,6 +117,7 @@ local SPRITE_MAP = {
 	love = {
 		sprite = "virtual-signal/signal-heart"
 	},
+	-- Food emotes.
 	uranium_238 = {
 		sprite = "item/uranium-238"
 	},

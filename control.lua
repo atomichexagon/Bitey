@@ -41,7 +41,7 @@ commands.add_command("bpsleep", "Put the pet to sleep.", function(command)
 	local entry = storage.biter_pet[command.player_index]
 	if not entry then return end
 
-	if entry.wake_state == "sleeping" then
+	if entry.current_form == "sleeping" then
 		game.print(string.format("%s %s", DC.ICON, t.f("The pet is already sleeping.")))
 	else
 		game.print(string.format("%s %s", DC.ICON, t.f("Putting the pet to sleep.")))
@@ -55,7 +55,7 @@ commands.add_command("bpwake", "Wake the pet up from sleep.", function(command)
 	local entry = storage.biter_pet[command.player_index]
 	if not entry then return end
 	
-	if entry.wake_state == "active" then
+	if entry.current_form == "active" then
 		game.print(string.format("%s %s", DC.ICON, t.f("The pet is already awake.")))
 	else
 		game.print(string.format("%s %s", DC.ICON, t.f("Waking the pet up from sleep.")))
@@ -103,6 +103,7 @@ script.on_load(function()
 end)
 
 -- TODO: Thoroughly test existing save spawn logic.
+-- TODO: Renmants are spawning in some scenarios?
 script.on_configuration_changed(function(cfg)
 	events.on_configuration_changed(cfg)
 end)

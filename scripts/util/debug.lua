@@ -191,7 +191,12 @@ function pet_debug.render_pet_behavior(player_index, behavior)
 			entity = pet,
 			offset = DC.DEBUG_VISUALIZE_STATE_OFFSET
 		},
-		color = player.color,
+		color = {
+			player.color.r,
+			player.color.g,
+			player.color.b,
+			1
+		},
 		use_rich_text = true,
 		scale = 0.8,
 		time_to_live = 30
@@ -266,6 +271,5 @@ function pet_debug.toggle_mood_debugging()
 	pet_debug.mood_debugging_enabled = not pet_debug.mood_debugging_enabled
 	return pet_debug.mood_debugging_enabled
 end
-
 
 return pet_debug

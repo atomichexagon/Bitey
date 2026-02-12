@@ -1,17 +1,19 @@
 local debug = require("scripts.util.debug")
 local normalize = require("scripts.util.normalize")
 local pet_state = require("scripts.core.pet_state")
+local position_util = require("scripts.util.position_util")
 local t = require("scripts.util.text_format")
 
 local LC = require("scripts.constants.lifecycle")
 
 local SCALING = require("__biter-pet__.shared.scaling")
 local SCALE = SCALING.SIZE_SCALE
+local SLEEP_SCALE = SCALING.SLEEP_SCALE
 
 local pet_state_machine = {}
 
 function pet_state_machine.enter_idle(player_index, pet, entry, destination)
-	if entry.wake_state == "idle" then return end
+	if entry.current_form == "idle" then return end
 	if not (pet and pet.valid) then return end
 
 	local surface = pet.surface
@@ -19,12 +21,16 @@ function pet_state_machine.enter_idle(player_index, pet, entry, destination)
 	local force = pet.force
 	local name = pet.name .. "-idle"
 	normalize.clear_emote_queue(player_index)
+
+	local orientation = pet.orientation or 0
+	local direction_index = position_util.direction_from_orientation(orientation)
 	pet.destroy()
-	debug.trace(string.format("Switching to %s state.", t.f("idle", "f")))
+
 	local idler = surface.create_entity {
 		name = name,
 		position = pos,
-		force = force
+		force = force,
+		direction = direction_index
 	}
 
 	idler.commandable.set_command {
@@ -35,32 +41,36 @@ function pet_state_machine.enter_idle(player_index, pet, entry, destination)
 	}
 
 	entry.unit = idler
-	entry.wake_state = "idle"
+	entry.current_form = "idle"
 end
 
 function pet_state_machine.enter_active(player_index, entry)
-	if not entry.wake_state then return end
-	if entry.wake_state == "active" then return end
+	if not entry.current_form then return end
+	if entry.current_form == "active" then return end
 
-	local unit = entry.unit
-	if not (unit and unit.valid) then return end
+	local pet = entry.unit
+	if not (pet and pet.valid) then return end
 
-	local surface = unit.surface
-	local position = unit.position
-	local force = unit.force
+	local surface = pet.surface
+	local position = pet.position
+	local force = pet.force
 
-	local name = normalize.name(unit.name)
+	local name = normalize.name(pet.name)
 	normalize.clear_emote_queue(player_index)
-	unit.destroy()
+
+	local orientation = pet.orientation or 0
+	local direction_index = position_util.direction_from_orientation(orientation)
+	pet.destroy()
 
 	local active = surface.create_entity {
 		name = name,
 		position = position,
-		force = force
+		force = force,
+		direction = direction_index
 	}
 
 	entry.unit = active
-	entry.wake_state = "active"
+	entry.current_form = "active"
 end
 
 local function get_sleep_animation_name(orientation)
@@ -69,7 +79,7 @@ local function get_sleep_animation_name(orientation)
 end
 
 function pet_state_machine.enter_sleep(player_index, entry)
-	if entry.wake_state == "sleeping" then return end
+	if entry.current_form == "sleeping" then return end
 	local pet = entry.unit
 	if not (pet and pet.valid) then return end
 
@@ -77,7 +87,7 @@ function pet_state_machine.enter_sleep(player_index, entry)
 	local position = pet.position
 	local force = pet.force
 	local name = normalize.name(pet.name)
-	local scale_factor = SCALE[name] * 0.5
+	local scale_factor = SLEEP_SCALE[name] * 0.5
 	local sleeper_name = string.format("%s%s", name, "-sleeping")
 	local animation = get_sleep_animation_name(pet.orientation)
 	entry.sleep_direction = pet.orientation
@@ -100,7 +110,6 @@ function pet_state_machine.enter_sleep(player_index, entry)
 		direction = entry.sleep_direction
 
 	}
-	game.print(tostring(entry.sleep_direction))
 	entry.sleep_animation_id = id
 
 	sleeper.commandable.set_command {
@@ -109,12 +118,12 @@ function pet_state_machine.enter_sleep(player_index, entry)
 	}
 
 	entry.unit = sleeper
-	entry.wake_state = "sleeping"
+	entry.current_form = "sleeping"
 
 	-- TODO: Add play_sound=true/false to emote table.
 	-- TODO: Add custom fade_rate key to emote table.
-	-- TODO: Add biter snoring sound if doable.
-	-- TODO: Switch from default biter emote roars to snoring sounds if wake_state="sleeping"
+	-- TODO: Add biter snoring sound if doable or just lower roar sound when sleeping.
+	-- TODO: Switch from default biter emote roars to snoring sounds if current_form="sleeping"
 	-- TODO: Maybe add custom light color to mood emotes when biter is "dreaming".
 	pet_state.force_emote(player_index, entry, "sleeping", false)
 end

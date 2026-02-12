@@ -1,6 +1,6 @@
 local debug = require("scripts.util.debug")
 local pet_nest = require("scripts.core.pet_nest")
-local position = require("scripts.util.position")
+local position_util = require("scripts.util.position_util")
 local t = require("scripts.util.text_format")
 
 local SC = require("scripts.constants.spawn")
@@ -11,27 +11,27 @@ function pet_spawn.choose_orphan_spawn(surface, origin)
 	local attempts = 0
 	local successes = 0
 
-	local pos_candidates = {}
+	local position_candidates = {}
 	for i = 1, 60 do
 		attempts = attempts + 1
 
 		local angle = math.random() * math.pi * 2
 		local distance = SC.MINIMUM_SPAWN_DISTANCE + math.random() ^ 0.5 * SC.MAXIMUM_SPAWN_OFFSET
 
-		local pos = {
+		local position = {
 			x = origin.x + math.cos(angle) * distance,
 			y = origin.y + math.sin(angle) * distance
 		}
 
 		-- Ensure chunks exist for spawning.
-		surface.request_to_generate_chunks(pos, 0)
+		surface.request_to_generate_chunks(position, 0)
 		surface.force_generate_chunk_requests()
 
-		if not surface.get_tile(pos).collides_with("water_tile") then
-			local valid = surface.find_non_colliding_position("pet-small-biter-baby", pos, SC.SPAWN_SEARCH_RADIUS, SC.SEARCH_PRECISION)
+		if not surface.get_tile(position).collides_with("water_tile") then
+			local valid = surface.find_non_colliding_position("pet-small-biter-baby", position, SC.SPAWN_SEARCH_RADIUS, SC.SEARCH_PRECISION)
 			if valid then
 				successes = successes + 1
-				pos_candidates[#pos_candidates + 1] = valid
+				position_candidates[#position_candidates + 1] = valid
 			end
 		end
 	end
@@ -40,8 +40,8 @@ function pet_spawn.choose_orphan_spawn(surface, origin)
 	debug.info(successes .. " of " .. attempts .. " attemps were successful.")
 
 	-- Choose random spawn position for nest.
-	if #pos_candidates > 0 then
-		local spawn_pos = pos_candidates[math.random(1, #pos_candidates)]
+	if #position_candidates > 0 then
+		local spawn_pos = position_candidates[math.random(1, #position_candidates)]
 		debug.info("Choosing randomized spawn position from candidate positions.")
 		return spawn_pos
 	end

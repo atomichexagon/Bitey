@@ -6,7 +6,7 @@ return {
 	ICON = "[img=biter-pet]",
 
 	DEBUG_VISUALIZERS_ENABLED = false,
-	DEBUG_SHOW_NEEDS_UPDATES = false,
+	DEBUG_SHOW_NEEDS_UPDATES = true,
 	DEBUG_MOOD_ENABLED = false,
 	DEBUG_VISUALIZE_STATE_OFFSET = {
 		0.65,

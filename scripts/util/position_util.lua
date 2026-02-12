@@ -1,5 +1,10 @@
 local position = {}
 
+
+function position.direction_from_orientation(orientation)
+    return math.floor(orientation * 16 + 0.5) % 16
+end
+
 function position.pick_idle_target(pet_position, tether, radius)
 	for i = 1, 20 do
 

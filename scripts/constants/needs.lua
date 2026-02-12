@@ -1,32 +1,90 @@
-local NEEDS_CONSTANTS = {
+-- Use /bpmoods to switch to high-frequency debug intervals.
+local NEED_INTERVALS = {
 
-	DEFAULT_INTERVALS = {
-		mood = 60 * 30, -- Mood recalculation tick interval.
-		hunger = 60 * 30, -- Hunger increment tick interval.
-		thirst = 60 * 60, -- Thirst increment tick interval.
-		boredom = 60 * 120 -- Boredoem increment tick interval.
+	-- State tick intervals for physiological needs (ticks per second) * (seconds).
+	active = {
+		mood = 60 * 25,
+		hunger = 60 * 10,
+		thirst = 60 * 20,
+		boredom = 60 * 60,
+		tiredness = 60 * 5
 	},
-
-	-- Use /bpmoods to switch to high-frequency intervals.
-	DEBUG_INTERVALS = {
+	idle = {
+		mood = 60 * 15,
+		hunger = 60 * 15,
+		thirst = 60 * 30,
+		boredom = 60 * 30,
+		tiredness = 60 * 5
+	},
+	sleeping = {
+		mood = 60 * 10,
+		hunger = 60 * 15,
+		thirst = 60 * 30,
+		boredom = 60 * 60,
+		tiredness = 60 * 3
+	},
+	debug = {
 		mood = 60 * 5,
 		hunger = 60 * 5,
 		thirst = 60 * 5,
 		boredom = 60 * 5
+	}
+}
+
+local NEED_RATES = {
+	active = {
+		increments = {
+			-- Need increment values per need interval.
+			hunger = 2,
+			thirst = 2,
+			boredom = 1,
+			tiredness = 2
+		},
+		penalties = {
+			-- Mood (happiness) penalty for negative physiological states at interval.
+			hunger = -3,
+			thirst = -2,
+			boredom = -1,
+			tiredness = 0,
+			happiness = -2
+		}
+
 	},
+	idle = {
+		increments = {
+			hunger = 1,
+			thirst = 1,
+			boredom = 2,
+			tiredness = 1
+		},
+		penalties = {
+			hunger = -1,
+			thirst = -1,
+			boredom = -2,
+			tiredness = 0,
+			happiness = -1
+		}
 
-	MOOD_RECALCULATION_INTERVAL = 60 * 50,
-	HUNGER_INCREMENT = 1, -- Hunger added every hunger interval.
-	THIRST_INCREMENT = 1, -- Thirst added every thirst interval.
-	BOREDOM_INCREMENT = 1, -- Boredom added every boredom interval.
+	},
+	sleeping = {
+		increments = {
+			hunger = 1,
+			thirst = 1,
+			boredom = 0,
+			tiredness = -8
+		},
+		penalties = {
+			hunger = 0,
+			thirst = 0,
+			boredom = 0,
+			tiredness = 0,
+			happiness = 0
+		}
 
-	-- Mood penalties for extreme physiological states.
-	SEVERE_HUNGER_PENALTY = -3,
-	SEVERE_THIRST_PENALTY = -2,
-	SEVERE_BOREDOM_PENALTY = -1,
-	SEVERE_SADNESS_PENALTY = -1
+	}
 }
 
 return {
-	NEEDS_CONSTANTS = NEEDS_CONSTANTS
+	NEED_INTERVALS = NEED_INTERVALS,
+	NEED_RATES = NEED_RATES
 }

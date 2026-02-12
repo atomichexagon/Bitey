@@ -72,15 +72,15 @@ local BITER_MAP = {
 		base_equivalent = "medium-spitter",
 		sound = "spitter-call-med"
 	},
-	["pet-large-spitter-baby"] = {
+	["pet-big-spitter-baby"] = {
 		base_equivalent = "big-spitter",
 		sound = "spitter-call-big"
 	},
-	["pet-large-spitter-small"] = {
+	["pet-big-spitter-small"] = {
 		base_equivalent = "big-spitter",
 		sound = "spitter-call-big"
 	},
-	["pet-large-spitter-large"] = {
+	["pet-big-spitter-large"] = {
 		base_equivalent = "big-spitter",
 		sound = "spitter-call-big"
 	},

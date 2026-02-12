@@ -1,6 +1,6 @@
 local debug = require("scripts.util.debug")
 local notifications = require("scripts.util.notifications")
-local position = require("scripts.util.position")
+local position_util = require("scripts.util.position_util")
 local audio = require("scripts.util.audio")
 local pet_state = require("scripts.core.pet_state")
 local EVENT_SETTINGS = require("scripts.constants.events")
@@ -26,11 +26,11 @@ local function process_intro_notification(player_index, entry)
 
 	if entry.intro_end_tick and not entry.intro_notification_sent then
 		if now > entry.intro_pet_alert_threshold then
-			local direction = position.get_direction_of_position(player.position, pet.position)
+			local direction = position_util.get_direction_of_position(player.position, pet.position)
 			notifications.notify(player, pet, {
 				type = "entity",
 				name = BITER_MAP[entry.biter_tier].base_equivalent
-			}, "You hear a strange noise coming from the " .. direction .. ".")
+			}, string.format("I heard a scream to the %s...", direction))
 			entry.intro_notification_sent = true
 			audio.play_global_sound(player, "death-rattle")
 			player.force.chart(pet.surface, {

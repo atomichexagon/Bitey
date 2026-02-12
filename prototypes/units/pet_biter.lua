@@ -1,6 +1,7 @@
 local SCALING = require("__biter-pet__.shared.scaling")
 local SCALE = SCALING.SIZE_SCALE
 local SPEED = SCALING.SPEED_SCALE
+local HEALTH = SCALING.HEALTH_SCALE
 
 local BASES = {
 	biter = "small-biter",
@@ -72,8 +73,9 @@ local function make_pet_variant(base, name)
 		}
 	end
 
-	pet.max_health = math.floor(15 * scale_factor)
-
+	local base_health = pet.max_health or 1
+	local health_scale = HEALTH[name] or 1
+	pet.max_health = math.floor(base_health * health_scale)
 	return pet
 end
 
@@ -113,8 +115,9 @@ local function make_sleeping_pet_variant(base, name)
 		}
 	end
 
-	pet.max_health = math.floor(15 * scale_factor)
-
+	local base_health = pet.max_health or 1
+	local health_scale = HEALTH[name] or 1
+	pet.max_health = math.floor(base_health * health_scale)
 	return pet
 end
 

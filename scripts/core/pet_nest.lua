@@ -1,4 +1,4 @@
-local post_util = require("scripts.util.position")
+local position_util = require("scripts.util.position_util")
 
 local pet_nest = {}
 
@@ -35,13 +35,13 @@ local function clear_nest_area(surface, position, radius, types)
 		type = types,
 		area = area
 	}
-	for _, ent in ipairs(entities) do if post_util.distance(ent.position, position) <= radius then ent.destroy() end end
+	for _, ent in ipairs(entities) do if position_util.distance(ent.position, position) <= radius then ent.destroy() end end
 
 	-- Throw down some dirt.
 	local tiles = {}
 	for x = position.x - radius, position.x + radius do
 		for y = position.y - radius, position.y + radius do
-			if post_util.distance({
+			if position_util.distance({
 				x = x,
 				y = y
 			}, position) <= radius then

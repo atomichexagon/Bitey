@@ -1,3 +1,4 @@
+-- Re-work investigate and sleeping emotes (too hard to see).
 data:extend({
 	{
 		type = "sprite",
