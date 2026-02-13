@@ -1,3 +1,5 @@
+local pet_state = require("scripts.core.pet_state")
+
 local pet_init = {}
 
 function pet_init.initialize_storage()
@@ -24,9 +26,11 @@ end
 
 function pet_init.check_existing_research()
 	for _, force in pairs(game.forces) do
-		if force.technologies["fluid-handling"] and force.technologies["fluid-handling"].researched then
+		local unlocked_flud_handling = force.technologies["fluid-handling"] and
+				                               force.technologies["fluid-handling"].researched
+		if unlocked_flud_handling then
 			for _, player in pairs(force.players) do
-				local state = ensure_state(player.index)
+				local state = pet_state.get_state(player.index)
 				state.has_fluid_handling = true
 			end
 		end

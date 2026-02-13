@@ -1,5 +1,5 @@
-local debug = require("scripts.util.debug")
-local audio = require("scripts.util.audio")
+local debug = require("scripts.utilities.debug")
+local audio = require("scripts.utilities.audio")
 
 local BITER_CONSTANTS = require("scripts.constants.biters")
 local BITER_MAP = BITER_CONSTANTS.BITER_MAP

@@ -1,4 +1,4 @@
-local debug = require("scripts.util.debug")
+local debug = require("scripts.utilities.debug")
 local notifications = {}
 
 function notifications.notify(player, entity, icon, message, sound)

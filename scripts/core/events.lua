@@ -1,4 +1,4 @@
-local debug = require("scripts.util.debug")
+local debug = require("scripts.utilities.debug")
 local pet_lifecycle = require("scripts.core.pet_lifecycle")
 local pet_state = require("scripts.core.pet_state")
 local pet_spawn = require("scripts.core.pet_spawn")
@@ -33,12 +33,22 @@ function events.on_configuration_changed(cfg)
 	pet_init.initialize_storage()
 	pet_init.create_orphan_force()
 	pet_init.check_existing_research()
-
 	for _, player in pairs(game.players) do ensure_pet_exists(player) end
 end
 
 function events.on_load()
 	-- Rebind metatables at some point.
+end
+
+function events.on_entity_damaged(event)
+	local entity = event.entity
+	if not (entity and entity.valid) then return end
+	for player_index, entry in pairs(storage.biter_pet) do
+		if entry.unit == entity then
+			pet_behavior.on_pet_damaged(player_index, entry, event)
+			return
+		end
+	end
 end
 
 function events.on_player_created(event)

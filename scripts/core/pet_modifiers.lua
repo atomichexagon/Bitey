@@ -1,7 +1,7 @@
-local debug = require("scripts.util.debug")
+local debug = require("scripts.utilities.debug")
 local pet_state = require("scripts.core.pet_state")
 
-local t = require("scripts.util.text_format")
+local t = require("scripts.utilities.text_format")
 
 local MODIFIER_CONSTANTS = require("scripts.constants.modifiers")
 local FOOD_MODIFIERS = MODIFIER_CONSTANTS.FOOD_MODIFIERS

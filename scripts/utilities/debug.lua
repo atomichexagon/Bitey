@@ -1,4 +1,4 @@
-local t = require("scripts.util.text_format")
+local t = require("scripts.utilities.text_format")
 
 local DC = require("scripts.constants.debug")
 local TF = require("scripts.constants.text_format")
@@ -134,21 +134,15 @@ end
 
 -- Allows debug level configuration via command console.
 function pet_debug.set_level(new_level, player)
-	pet_debug.current_level = new_level
+	if not player then return end
 
-	if (player and player.valid) then
-		update_player_speed(player)
-		player.insert {
-			name = "raw-fish",
-			count = 50
-		}
-	end
+	pet_debug.current_level = new_level
 
 	local level_color = get_font_color_from_level(new_level)
 	local uc_level_name = string.upper(pet_debug.level_name[pet_debug.current_level])
 	local formatted_message = string.format(t.f("%s Debug logging level set to %s - [color=%s]%s[/color] "), DC.ICON,
 			tostring(pet_debug.current_level), level_color, uc_level_name)
-	game.print(formatted_message)
+	player.print(formatted_message)
 end
 
 function pet_debug.render_path_to_target(player_index, pet, target)

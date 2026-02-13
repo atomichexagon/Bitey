@@ -1,7 +1,7 @@
-local debug = require("scripts.util.debug")
+local debug = require("scripts.utilities.debug")
 local pet_nest = require("scripts.core.pet_nest")
-local position_util = require("scripts.util.position_util")
-local t = require("scripts.util.text_format")
+local position_util = require("scripts.utilities.position_util")
+local t = require("scripts.utilities.text_format")
 
 local SC = require("scripts.constants.spawn")
 

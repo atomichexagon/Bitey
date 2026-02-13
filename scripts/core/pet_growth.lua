@@ -1,9 +1,9 @@
-local debug = require("scripts.util.debug")
+local debug = require("scripts.utilities.debug")
 local pet_state = require("scripts.core.pet_state")
-local normalize = require("scripts.util.normalize")
-local notifications = require("scripts.util.notifications")
-local position_util = require("scripts.util.position_util")
-local t = require("scripts.util.text_format")
+local normalize = require("scripts.utilities.normalize")
+local notifications = require("scripts.utilities.notifications")
+local position_util = require("scripts.utilities.position_util")
+local t = require("scripts.utilities.text_format")
 
 local BM = require("scripts.constants.biters").BITER_MAP
 local GS = require("scripts.constants.growth").GROWTH_SETTINGS

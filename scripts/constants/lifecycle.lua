@@ -4,8 +4,8 @@ return {
 
 	-- Fleeing.
 	PET_IS_SCAREDY_CAT = false, -- NOTE: Enable to debug and trace flee mechanics.
-	PET_SAFE_THRESHOLD = 0.50, -- Pet will stop fleeing when percentage of health is above this threshold.
-	PET_FLEE_THRESHOLD = 0.25, -- Pet will flee when percentage of health is below this value.
+	PET_SAFE_THRESHOLD = 0.75, -- Pet will stop fleeing when percentage of health is above this threshold.
+	PET_FLEE_THRESHOLD = 0.50, -- Pet will flee when percentage of health is below this value.
 	PET_FLEE_SAFE_DISTANCE = 50, -- Distance in tiles pet will flee from danger.
 	PET_FLEE_HAPPINESS_PENALTY = -5,
 	PET_FLEE_HUNGER_PENALTY = 8,
@@ -64,6 +64,6 @@ return {
 	TIREDNESS_SLEEP_THRESHOLD = 70,
 	TIREDNESS_WAKE_THRESHOLD = 10,
 	DARKNESS_THRESHOLD = 0.75,
-	HUNGER_WAKE_THRESHOLD = 90,
-	THIRST_WAKE_THRESHOLD = 90
+	HUNGER_WAKE_THRESHOLD = 95,
+	THIRST_WAKE_THRESHOLD = 95
 }

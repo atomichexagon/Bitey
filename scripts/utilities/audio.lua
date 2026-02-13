@@ -1,4 +1,4 @@
-local debug = require("scripts.util.debug")
+local debug = require("scripts.utilities.debug")
 local audio = {}
 
 function audio.play_pet_sound(player, entry, sound, volume)

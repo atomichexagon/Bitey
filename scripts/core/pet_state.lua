@@ -1,6 +1,6 @@
-local debug = require("scripts.util.debug")
+local debug = require("scripts.utilities.debug")
 local pet_visuals = require("scripts.core.pet_visuals")
-local t = require("scripts.util.text_format")
+local t = require("scripts.utilities.text_format")
 
 local TF = require("scripts.constants.text_format")
 local DC = require("scripts.constants.debug")
@@ -48,6 +48,16 @@ local function ensure_state(player_index)
 	end
 
 	return state
+end
+
+function pet_state.get_state(player_index)
+	return ensure_state(player_index)
+end
+
+local function clamp(value, minimum, maximum)
+	if value < minimum then return minimum end
+	if value > maximum then return maximum end
+	return value
 end
 
 local function ensure_queue(player_index)
@@ -121,7 +131,7 @@ end
 function pet_state.force_emote(player_index, entry, emote, fast_render)
 	local emote_state = ensure_queue(player_index)
 
-	-- Destroy any random mood emote to clear way for event driven emotes.
+	-- Clear tick-based emotes to clear the way for event-driven emotes.
 	if (emote_state.sprite_render and emote_state.active_type ~= "forced") then
 		if emote_state.sprite_render.sprite and emote_state.sprite_render.sprite.valid then
 			emote_state.sprite_render.sprite.destroy()
@@ -136,7 +146,7 @@ function pet_state.force_emote(player_index, entry, emote, fast_render)
 	emote_state.ends_at_tick = nil
 	emote_state.queue = {}
 
-	-- Don't queue duplicate emotes for fast rendering.
+	-- Don't queue up duplicate emotes for fast rendering.
 	for _, queued in ipairs(emote_state.forced_queue) do
 		if queued == emote then
 			debug.trace(string.format("Render request ignored because %s is already queued.", t.f(emote, "f")))
@@ -146,7 +156,7 @@ function pet_state.force_emote(player_index, entry, emote, fast_render)
 
 	table.insert(emote_state.forced_queue, emote)
 
-	-- If nothing is active then render the emote immediately.
+	-- If nothing else is active then render the emote immediately.
 	if not emote_state.active_type then
 		debug.info(string.format("An event has triggered a forced emote [%s].", t.f(emote, "f")))
 		start_next_forced_emote(player_index, entry, fast_render)
@@ -179,6 +189,14 @@ local function tick_emotes(player_index, entry)
 		emote_state.ends_at_tick = now + (RS.EMOTE_DURATION or 180)
 	end
 end
+
+-- Top 10 anime betrayal of all time.
+function pet_state.switch_to_enemy_force(player_index, entry)
+	local pet = entry.unit
+	if not pet and pet.valid then return end
+	pet.force = game.forces["enemy"]
+end
+
 
 -- General mood functions.
 local function pick_random_mood(player_index, mood_table)
@@ -252,7 +270,7 @@ local function calculate_mood(player_index)
 	if state.boredom >= MT.apathetic then mood_table[#mood_table + 1] = TM.apathetic end
 	if state.happiness <= MT.sad then mood_table[#mood_table + 1] = TM.sad end
 	if state.friendship >= MT.loyal then mood_table[#mood_table + 1] = TM.loyal end
-	if state.tirednesss >= MT.sleepy then mood_table[#mood_table + 1] = TM.sleepy end
+	if state.tiredness >= MT.sleepy then mood_table[#mood_table + 1] = TM.sleepy end
 	if next(mood_table) ~= nil then return pick_random_mood(player_index, mood_table) end
 
 	-- Mild states.
@@ -260,7 +278,7 @@ local function calculate_mood(player_index)
 	if state.boredom >= MT.alert then mood_table[#mood_table + 1] = TM.alert end
 	if state.happiness <= MT.happy then mood_table[#mood_table + 1] = TM.happy end
 	if state.friendship >= MT.friendly then mood_table[#mood_table + 1] = TM.friendly end
-	if state.tirednesss >= MT.animated then mood_table[#mood_table + 1] = TM.animated end
+	if state.tiredness >= MT.animated then mood_table[#mood_table + 1] = TM.animated end
 	if next(mood_table) ~= nil then return pick_random_mood(player_index, mood_table) end
 
 	-- Contented states.
@@ -268,7 +286,7 @@ local function calculate_mood(player_index)
 	if state.boredom >= MT.focused then mood_table[#mood_table + 1] = TM.focused end
 	if state.happiness <= MT.overjoyed then mood_table[#mood_table + 1] = TM.overjoyed end
 	if state.friendship >= MT.wary then mood_table[#mood_table + 1] = TM.wary end
-	if state.tirednesss >= MT.energized then mood_table[#mood_table + 1] = TM.energized end
+	if state.tiredness >= MT.energized then mood_table[#mood_table + 1] = TM.energized end
 	if next(mood_table) ~= nil then return pick_random_mood(player_index, mood_table) end
 
 	return "confused"
@@ -289,33 +307,38 @@ function pet_state.tick_pet_state(player_index, entry)
 	local increments = NR[current_form].increments
 	local penalties = NR[current_form].penalties
 	local intervals = NI[current_form]
+	local debug_int = NI.debug
 	local mood_function = (current_form == "sleeping") and calculate_dreams or calculate_mood
 
 	state.next_hunger_tick = state.next_hunger_tick or now + intervals.hunger
 	if now >= state.next_hunger_tick then
 		pet_state.add_hunger(player_index, increments.hunger)
-		state.next_hunger_tick = now + intervals.hunger
+		local next_hunger_interval = debug.mood_debugging_enabled and debug_int.hunger or intervals.hunger
+		state.next_hunger_tick = now + next_hunger_interval
 		apply_penalty_if_threshold(player_index, "hunger", state.hunger, MT.starving, penalties.hunger)
 	end
 
 	state.next_thirst_tick = state.next_thirst_tick or now + intervals.thirst
 	if now >= state.next_thirst_tick then
-		pet_state.add_thirst(player_index, increments.thirst)
-		state.next_thirst_tick = now + intervals.thirst
+		if state.has_fluid_handling then pet_state.add_thirst(player_index, increments.thirst) end
+		local next_thirst_interval = debug.mood_debugging_enabled and debug_int.thirst or intervals.thirst
+		state.next_thirst_tick = now + next_thirst_interval
 		apply_penalty_if_threshold(player_index, "thirst", state.thirst, MT.dehydrated, penalties.thirst)
 	end
 
 	state.next_boredom_tick = state.next_boredom_tick or now + intervals.boredom
 	if now >= state.next_boredom_tick then
 		pet_state.add_boredom(player_index, increments.boredom)
-		state.next_boredom_tick = now + intervals.boredom
+		local next_boredom_interval = debug.mood_debugging_enabled and debug_int.boredom or intervals.boredom
+		state.next_boredom_tick = now + next_boredom_interval
 		apply_penalty_if_threshold(player_index, "boredom", state.boredom, MT.frustrated, penalties.boredom)
 	end
 
 	state.next_tiredness_tick = state.next_tiredness_tick or now + intervals.tiredness
 	if now >= state.next_tiredness_tick then
 		pet_state.add_tiredness(player_index, increments.tiredness)
-		state.next_tiredness_tick = now + intervals.tiredness
+		local next_tiredness_interval = debug.mood_debugging_enabled and debug_int.tiredness or intervals.tiredness
+		state.next_tiredness_tick = now + next_tiredness_interval
 		apply_penalty_if_threshold(player_index, "tiredness", state.tiredness, MT.exhausted, penalties.tiredness)
 	end
 
@@ -327,11 +350,10 @@ function pet_state.tick_pet_state(player_index, entry)
 
 		debug.info(string.format("%s [%s]", "A new mood has been calculated and queued", t.f(state.mood, "f")))
 		pet_state.queue_emote(player_index, pet, state.mood)
-		state.next_mood_calc_tick = now + intervals.mood
+		local next_mood_interval = debug.mood_debugging_enabled and debug_int.mood or intervals.mood
+		state.next_mood_calc_tick = now + next_mood_interval
 
-		if state.friendship <= MT.depressed then
-			pet_state.add_friendship(player_index, penalties.happiness)
-		end
+		if state.friendship <= MT.depressed then pet_state.add_friendship(player_index, penalties.happiness) end
 
 		-- Add mood to queue if no forced emote is currently not active.
 		local emote_state = ensure_queue(player_index)
@@ -363,7 +385,7 @@ end
 
 function pet_state.set_hunger(player_index, value)
 	local state = ensure_state(player_index)
-	state.hunger = math.max(0, math.min(100, value))
+	state.hunger = clamp(value, 0, 100)
 end
 
 local function debug_needs_update(label, new_state, old_state)
@@ -375,7 +397,7 @@ end
 function pet_state.add_hunger(player_index, delta)
 	if not delta then return end
 	local state = ensure_state(player_index)
-	local new_hunger = math.max(0, math.min(100, state.hunger + (delta)))
+	local new_hunger = clamp(state.hunger + delta, 0, 100)
 	debug_needs_update("Hunger", new_hunger, state.hunger)
 	state.hunger = new_hunger
 end
@@ -408,13 +430,13 @@ end
 
 function pet_state.set_thirst(player_index, value)
 	local state = ensure_state(player_index)
-	state.thirst = math.max(0, math.min(100, value))
+	state.thirst = clamp(value, 0, 100)
 end
 
 function pet_state.add_thirst(player_index, delta)
 	if not delta then return end
 	local state = ensure_state(player_index)
-	local new_thirst = math.max(0, math.min(100, state.thirst + delta))
+	local new_thirst = clamp(state.thirst + delta, 0, 100)
 	debug_needs_update("Thirst", new_thirst, state.thirst)
 	state.thirst = new_thirst
 end
@@ -427,13 +449,13 @@ end
 
 function pet_state.set_tiredness(player_index, value)
 	local state = ensure_state(player_index)
-	state.tiredness = math.max(0, math.min(100, value))
+	state.tiredness = clamp(value, 0, 100)
 end
 
 function pet_state.add_tiredness(player_index, delta)
 	if not delta then return end
 	local state = ensure_state(player_index)
-	local new_tiredness = math.max(0, math.min(100, state.tiredness + delta))
+	local new_tiredness = clamp(state.tiredness + delta, 0, 100)
 	debug_needs_update("Tiredness", new_tiredness, state.tiredness)
 	state.tiredness = new_tiredness
 end
@@ -446,13 +468,13 @@ end
 
 function pet_state.set_morph(player_index, value)
 	local state = ensure_state(player_index)
-	state.morph = math.max(0, math.min(100, value))
+	state.morph = clamp(value, 0, 100)
 end
 
 function pet_state.add_morph(player_index, delta)
 	if not delta then return end
 	local state = ensure_state(player_index)
-	local new_morph = math.max(0, math.min(100, state.morph + delta))
+	local new_morph = clamp(state.morph + delta, 0, 100)
 	debug_needs_update("Morph", new_morph, state.morph)
 	state.morph = new_morph
 end
@@ -465,13 +487,13 @@ end
 
 function pet_state.set_evolution(player_index, value)
 	local state = ensure_state(player_index)
-	state.evolution = math.max(0, math.min(100, value))
+	state.evolution = clamp(value, 0, 100)
 end
 
 function pet_state.add_evolution(player_index, delta)
 	if not delta then return end
 	local state = ensure_state(player_index)
-	local new_evolution = math.max(0, math.min(100, state.evolution + delta))
+	local new_evolution = clamp(state.evolution + delta, 0, 100)
 	debug_needs_update("Evolution", new_evolution, state.evolution)
 	state.evolution = new_evolution
 end
@@ -484,13 +506,13 @@ end
 
 function pet_state.set_boredom(player_index, value)
 	local state = ensure_state(player_index)
-	state.boredom = math.max(0, math.min(100, value))
+	state.boredom = clamp(value, 0, 100)
 end
 
 function pet_state.add_boredom(player_index, delta)
 	if not delta then return end
 	local state = ensure_state(player_index)
-	local new_boredom = math.max(0, math.min(100, state.boredom + delta))
+	local new_boredom = clamp(state.boredom + delta, 0, 100)
 	debug_needs_update("Boredom", new_boredom, state.boredom)
 	state.boredom = new_boredom
 end
@@ -503,13 +525,13 @@ end
 
 function pet_state.set_happiness(player_index, value)
 	local state = ensure_state(player_index)
-	state.happiness = math.max(0, math.min(100, value))
+	state.happiness = clamp(value, 0, 100)
 end
 
 function pet_state.add_happiness(player_index, delta)
 	if not delta then return end
 	local state = ensure_state(player_index)
-	local new_happiness = math.max(0, math.min(100, state.happiness + delta))
+	local new_happiness = clamp(state.happiness + delta, 0, 100)
 	debug_needs_update("Happiness", new_happiness, state.happiness)
 	state.happiness = new_happiness
 end
@@ -522,13 +544,13 @@ end
 
 function pet_state.set_friendship(player_index, value)
 	local state = ensure_state(player_index)
-	state.friendship = math.max(0, math.min(100, value))
+	state.friendship = clamp(value, 0, 100)
 end
 
 function pet_state.add_friendship(player_index, delta)
 	if not delta then return end
 	local state = ensure_state(player_index)
-	local new_friendship = math.max(0, math.min(100, state.friendship + delta))
+	local new_friendship = clamp(state.friendship + delta, 0, 100)
 	debug_needs_update("Friendship", new_friendship, state.friendship)
 	state.friendship = new_friendship
 end

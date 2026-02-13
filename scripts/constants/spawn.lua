@@ -14,7 +14,7 @@ return {
 		happiness = 0,
 		hunger = 100,
 		morph = 0,
-		thirst = 100,
+		thirst = 0,
 		tiredness = 50,
 		current_form = "active",
 		feeding_target = nil

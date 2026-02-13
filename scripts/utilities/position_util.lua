@@ -42,34 +42,38 @@ function position.distance_squared(position_a, position_b)
 	return distance_x * distance_x + distance_y * distance_y
 end
 
--- TODO: Make intermediate directions less sensitive.
 function position.get_direction_of_position(origin, destination)
-	local distance_x = destination.x - origin.x
-	local distance_y = destination.y - origin.y
+    local distance_x = destination.x - origin.x
+    local distance_y = destination.y - origin.y
 
-	-- Determine primary axis.
-	local vertical
-	if distance_y < -1 then
-		vertical = "north"
-	elseif distance_y > 1 then
-		vertical = "south"
-	else
-		vertical = nil
-	end
+    local axis_x = math.abs(distance_x)
+    local axis_y = math.abs(distance_y)
 
-	local horizontal
-	if distance_x > 1 then
-		horizontal = "east"
-	elseif distance_x < -1 then
-		horizontal = "west"
-	else
-		horizontal = nil
-	end
+	-- Nest spawned too close to player so notification is unncessary.
+    if axis_x < 10 and axis_y < 10 then
+        return false
+    end
 
-	-- Return intermediate direction.
-	if vertical and horizontal then return vertical .. horizontal end
-	-- Return cardinal direction.
-	return vertical or horizontal or "here"
+    local vertical =
+        (distance_y < -1 and "north") or
+        (distance_y > 1 and "south") or
+        nil
+
+    local horizontal =
+        (distance_x > 1 and "east") or
+        (distance_x < -1 and "west") or
+        nil
+
+    if vertical and horizontal then
+        local dominant = math.max(axis_x, axis_y)
+        local minor = math.min(axis_x, axis_y)
+
+        if dominant / minor >= 1.5 then
+            return (axis_y > axis_x) and vertical or horizontal
+        end
+        return vertical .. horizontal
+    end
+    return vertical or horizontal
 end
 
 return position

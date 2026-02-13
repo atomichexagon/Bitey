@@ -1,4 +1,4 @@
-local debug = require("scripts.util.debug")
+local debug = require("scripts.utilities.debug")
 local pet_state = require("scripts.core.pet_state")
 
 local normalize = {}
@@ -25,7 +25,7 @@ function normalize.clear_emote_queue(player_index)
 		end
 
 	end
-	
+
 	emote_state.sprite_render = nil
 end
 

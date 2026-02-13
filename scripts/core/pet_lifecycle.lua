@@ -1,19 +1,22 @@
--- TODO: Add small random chance for biter to investigate entity and pause for a second or two. This should take precedence over everything else.
--- TODO: On player death; biter happiness should go to zero and they should stay by corpse until it is picked up.
+-- TODO: Add small random chance for biter to investigate entity while idle and pause for a second or two.
+-- This should take precedence over following, eating and sleeping, but not combat or fleeing.
+-- TODO: On player death; biter happiness should go to zero if friendship was high.
+-- Biter should follow corpse until it is picked up.
 -- TODO: Go through project and make sure all functions only used locally are actually local.
-local debug = require("scripts.util.debug")
-local notifications = require("scripts.util.notifications")
+-- TODO: Add morph logic and validate spitter evolution.
+local debug = require("scripts.utilities.debug")
+local notifications = require("scripts.utilities.notifications")
 local pet_behavior = require("scripts.core.pet_behavior")
 local pet_growth = require("scripts.core.pet_growth")
 local pet_reactions = require("scripts.core.pet_reactions")
 local pet_spawn = require("scripts.core.pet_spawn")
 local pet_state = require("scripts.core.pet_state")
 local pet_visuals = require("scripts.core.pet_visuals")
-local position_util = require("scripts.util.position_util")
+local position_util = require("scripts.utilities.position_util")
 local pet_modifiers = require("scripts.core.pet_modifiers")
 local pet_state_machine = require("scripts.core.pet_state_machine")
 
-local t = require("scripts.util.text_format")
+local t = require("scripts.utilities.text_format")
 
 local FD = require("scripts.constants.reactions").FOOD_DEFINITIONS
 local BM = require("scripts.constants.biters").BITER_MAP
@@ -144,7 +147,7 @@ local function handle_feeding_behavior(player_index, player, pet, entry)
 end
 
 -- TODO: Randomize idle state between wandering, pausing and investigating for random intervals.
--- TODO: Expand or disable follow radius when investigating.
+-- TODO: Ignore follow radius when behaivor is investigate.
 local function state_idle(player_index, player, pet, entry)
 	if not (pet and pet.valid) then return end
 
@@ -389,7 +392,7 @@ local function evaluate_attack_target(player_index, pet, entry)
 	return nil
 end
 
-local function state_attack(player_index, player, pet)
+local function state_attack(player_index, player, pet, entry)
 	local target = pet_state.get_enemy_target(player_index)
 	if not (target and target.valid) then
 		pet_state.clear_attack_target(player_index)
@@ -401,8 +404,8 @@ local function state_attack(player_index, player, pet)
 	local target_health = target.health or 0
 	local max_health = pet.prototype.get_max_health()
 
-	local pet_should_flee = pet_health < target_health and (pet_health / max_health) < LC.PET_FLEE_THRESHOLD
-	if (LC.PET_IS_SCAREDY_CAT or pet_should_flee) then
+	local pet_should_flee = (pet_health < target_health) and (pet_health / max_health) < LC.PET_FLEE_THRESHOLD
+	if LC.PET_IS_SCAREDY_CAT or pet_should_flee then
 		pet_state.set_behavior(player_index, "flee")
 		return
 	end
@@ -434,14 +437,14 @@ local function evaluate_tiredness(player_index, pet, entry)
 	end
 
 	-- Sleep logic.
-	if entry.current_form == "idle" and tiredness >= LC.TIREDNESS_SLEEP_THRESHOLD and darkness >= LC.DARKNESS_THRESHOLD then
+	if entry.current_form == "idle" and tiredness >= LC.TIREDNESS_SLEEP_THRESHOLD and darkness >= LC.DARKNESS_THRESHOLD and
+			hunger < LC.HUNGER_WAKE_THRESHOLD and thirst < LC.THIRST_WAKE_THRESHOLD then
 		debug.trace(string.format("Took process branch %s", t.f("SLEEP", "f")))
 		set_behavior_state(player_index, pet, entry, "sleeping")
 		return
 	end
 end
 
--- TODO: Change entry.current_form to entry.current_form
 local function process_pet(player_index, entry)
 	local player = game.get_player(player_index)
 	if not is_player_valid(player) then return end
@@ -449,9 +452,7 @@ local function process_pet(player_index, entry)
 	local pet = ensure_pet(player_index, entry)
 	if not pet then return end
 
-	local surf = pet.surface
-
-	-- Do android biters dream of electric spitters?
+	-- Sleeping branch.
 	if entry.current_form == "sleeping" then
 		pet_state.tick_pet_state(player_index, entry)
 		evaluate_tiredness(player_index, pet, entry)
@@ -465,18 +466,19 @@ local function process_pet(player_index, entry)
 	local behavior = pet_state.get_behavior(player_index)
 	if behavior == "flee" then
 		debug.trace(string.format("Took process branch %s", t.f("FLEE", "f")))
-		debug.trace("Pet taking flee branch.")
 		state_flee(player_index, player, pet, entry)
 		return
 	end
 
 	local attack_target = evaluate_attack_target(player_index, pet, entry)
-	if attack_target then pet_state.set_behavior(player_index, "attack") end
+	if attack_target then
+		pet_state.set_behavior(player_index, "attack")
+		behavior = "attack"
+	end
 
-	behavior = pet_state.get_behavior(player_index)
 	if behavior == "attack" then
 		debug.trace(string.format("Took process branch %s", t.f("ATTACK", "f")))
-		state_attack(player_index, player, pet)
+		state_attack(player_index, player, pet, entry)
 		return
 	end
 
@@ -490,7 +492,6 @@ local function process_pet(player_index, entry)
 	end
 
 	-- Evaluate sleep needs.
-	behavior = pet_state.get_behavior(player_index)
 	evaluate_tiredness(player_index, pet, entry)
 
 	-- Feed and follow branch.
@@ -528,6 +529,8 @@ function pet_lifecycle.on_tick(event)
 	end
 end
 
+-- TODO: Change notification depending on whether biter died as orphan, killed by player, age of pet, etc.
+-- Record time of adoption and calculate length of companionship.
 function pet_lifecycle.on_entity_died(event)
 	local entity = event.entity
 	if not (entity and entity.valid and entity.type == "unit") then return end
@@ -538,7 +541,7 @@ function pet_lifecycle.on_entity_died(event)
 			local pet = entry.unit
 			entry.unit = nil
 			entry.was_alive = false
-			entry.last_death_tick = game.tick -- Record the time of death
+			entry.last_death_tick = game.tick -- Record the time of death.
 
 			local player = game.get_player(player_index)
 			if player then

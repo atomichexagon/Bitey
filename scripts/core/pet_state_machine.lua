@@ -1,8 +1,8 @@
-local debug = require("scripts.util.debug")
-local normalize = require("scripts.util.normalize")
+local debug = require("scripts.utilities.debug")
+local normalize = require("scripts.utilities.normalize")
 local pet_state = require("scripts.core.pet_state")
-local position_util = require("scripts.util.position_util")
-local t = require("scripts.util.text_format")
+local position_util = require("scripts.utilities.position_util")
+local t = require("scripts.utilities.text_format")
 
 local LC = require("scripts.constants.lifecycle")
 

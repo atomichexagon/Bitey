@@ -1,4 +1,4 @@
-local debug = require("scripts.util.debug")
+local debug = require("scripts.utilities.debug")
 local pet_audio = require("scripts.core.pet_audio")
 local util = require("util")
 

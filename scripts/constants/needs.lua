@@ -24,10 +24,10 @@ local NEED_INTERVALS = {
 		tiredness = 60 * 3
 	},
 	debug = {
-		mood = 60 * 5,
-		hunger = 60 * 5,
-		thirst = 60 * 5,
-		boredom = 60 * 5
+		mood = 60 * 3,
+		hunger = 60 * 3,
+		thirst = 60 * 3,
+		boredom = 60 * 3
 	}
 }
 

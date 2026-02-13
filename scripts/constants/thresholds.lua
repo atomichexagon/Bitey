@@ -36,12 +36,18 @@ local MOOD_THRESHOLDS = {
 	wary = 0
 }
 
+local BEHAVIORAL_THRESHOLDS = {
+	friendship_total_betrayal = 5,
+	friendship_mild_betrayal = 50,
+	friendship_playing_dead = 90
+}
+
 local THRESHOLD_TO_SPRITE_MAP = {
 	starving = "hungry",
 	frustrated = "angry",
 	depressed = "very_sad",
-	devoted = "love",
-	exhausted = "playing_dead",
+	devoted = "very_happy",
+	exhausted = "tired",
 	hungry = "hungry",
 	apathetic = "bored",
 	sad = "sad",
@@ -61,5 +67,6 @@ local THRESHOLD_TO_SPRITE_MAP = {
 
 return {
 	MOOD_THRESHOLDS = MOOD_THRESHOLDS,
-	THRESHOLD_TO_SPRITE_MAP = THRESHOLD_TO_SPRITE_MAP
+	THRESHOLD_TO_SPRITE_MAP = THRESHOLD_TO_SPRITE_MAP,
+	BEHAVIORAL_THRESHOLDS = BEHAVIORAL_THRESHOLDS
 }
