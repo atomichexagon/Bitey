@@ -48,15 +48,15 @@ local BITER_MAP = {
 		base_equivalent = "behemoth-biter",
 		sound = "biter-roar-behemoth"
 	},
-	["pet-spitter-baby"] = {
+	["pet-small-spitter-baby"] = {
 		base_equivalent = "small-spitter",
 		sound = "spitter-call-small"
 	},
-	["pet-spitter-small"] = {
+	["pet-small-spitter-small"] = {
 		base_equivalent = "small-spitter",
 		sound = "spitter-call-small"
 	},
-	["pet-spitter-large"] = {
+	["pet-small-spitter-large"] = {
 		base_equivalent = "small-spitter",
 		sound = "spitter-call-small"
 	},

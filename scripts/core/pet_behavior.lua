@@ -1,13 +1,14 @@
+local audio = require("scripts.utilities.audio")
 local debug = require("scripts.utilities.debug")
 local notifications = require("scripts.utilities.notifications")
-local position_util = require("scripts.utilities.position_util")
-local audio = require("scripts.utilities.audio")
+local pet_modifiers = require("scripts.core.pet_modifiers")
 local pet_state = require("scripts.core.pet_state")
+local position_util = require("scripts.utilities.position_util")
 local t = require("scripts.utilities.text_format")
-local BIM = require("scripts.constants.biters").BITER_MAP
-local BEM = require("scripts.constants.modifiers").BEHAVIORAL_MODIFIERS
-local ES = require("scripts.constants.events")
+
+local BM = require("scripts.constants.biters").BITER_MAP
 local BT = require("scripts.constants.thresholds").BEHAVIORAL_THRESHOLDS
+local ES = require("scripts.constants.events")
 
 local pet_behavior = {}
 
@@ -31,7 +32,7 @@ local function process_intro_notification(player_index, entry)
 			if direction then
 				notifications.notify(player, pet, {
 					type = "entity",
-					name = BIM[entry.biter_tier].base_equivalent
+					name = BM[entry.biter_tier].base_equivalent
 				}, string.format("I heard a scream to the %s...", direction))
 			end
 			entry.intro_notification_sent = true
@@ -104,18 +105,18 @@ function pet_behavior.on_pet_damaged(player_index, entry, event)
 	local damage_insignificant = (damage <= maximum_health * 0.1)
 
 	if state.friendship < BT.friendship_total_betrayal then
-		pet_state.add_happiness(player_index, BEM.total_betrayal)
+		pet_modifiers.apply_friendly_fire_modifiers(player_index, entry, "total_betrayal")
 		pet_state.force_emote(player_index, entry, "angry")
 		pet_state.switch_to_enemy_force(player_index, entry)
 	elseif state.friendship < BT.friendship_mild_betrayal then
-		pet_state.add_happiness(player_index, BEM.mild_betrayal)
+		pet_modifiers.apply_friendly_fire_modifiers(player_index, entry, "mild_betrayal")
 		pet_state.force_emote(player_index, entry, "very_sad")
 	elseif state.friendship >= BT.friendship_playing_dead and is_full_health and damage_insignificant then
-		pet_state.add_boredom(player_index, -5)
+		pet_modifiers.apply_friendly_fire_modifiers(player_index, entry, "playing_dead")
 		pet_state.force_emote(player_index, entry, "playing_dead")
 		pet_state.force_emote(player_index, entry, "silly")
 	else
-		pet_state.add_happiness(player_index, -5)
+		pet_modifiers.apply_friendly_fire_modifiers(player_index, entry, "betrayal")
 		pet_state.force_emote(player_index, entry, "scared")
 	end
 end

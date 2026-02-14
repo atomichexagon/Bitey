@@ -27,7 +27,7 @@ local FOOD_MODIFIERS = {
 		friendship = 0,
 		happiness = 0,
 		hunger = 0,
-		morph = 5,
+		morph = 1,
 		thirst = 10,
 		tiredness = 2
 	},
@@ -37,7 +37,7 @@ local FOOD_MODIFIERS = {
 		friendship = 0,
 		happiness = 0,
 		hunger = 0,
-		morph = -5,
+		morph = -1,
 		thirst = 10,
 		tiredness = 2
 	},
@@ -197,10 +197,46 @@ local COMBAT_MODIFIERS = {
 }
 
 local BEHAVIORAL_MODIFIERS = {
-	["total_betrayal"] = -25,
-	["mild_betrayal"] = -15,
-	["betrayal"] = -10,
-	["playing_dead"] = 5
+	["total_betrayal"] = {
+		boredom = -0,
+		evolution = -10,
+		friendship = -100,
+		happiness = -25,
+		hunger = 5,
+		morph = 0,
+		thirst = 5,
+		tiredness = 1
+	},
+	["mild_betrayal"] = {
+		boredom = -0,
+		evolution = -5,
+		friendship = -50,
+		happiness = -15,
+		hunger = 5,
+		morph = 0,
+		thirst = 5,
+		tiredness = 1
+	},
+	["betrayal"] = {
+		boredom = 0,
+		evolution = -3,
+		friendship = -25,
+		happiness = -10,
+		hunger = 5,
+		morph = 0,
+		thirst = 5,
+		tiredness = 1
+	},
+	["playing_dead"] = {
+		boredom = -5,
+		evolution = 0,
+		friendship = 2,
+		happiness = 2,
+		hunger = 1,
+		morph = 0,
+		thirst = 1,
+		tiredness = 1
+	}
 }
 
 return {

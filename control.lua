@@ -22,7 +22,6 @@ script.on_load(function()
 	register_runtime_events()
 end)
 
--- TODO: Try to reproduce bug that caused nest remnants to no spawn after new game start.
 script.on_configuration_changed(function(cfg)
 	events.on_configuration_changed(cfg)
 end)

@@ -10,6 +10,23 @@ local DC = require("scripts.constants.debug")
 
 local console_commands = {}
 
+local function clamp(value, minimum, maximum)
+	if value < minimum then return minimum end
+	if value > maximum then return maximum end
+	return value
+end
+
+local ideal_state = {
+	boredom = 0,
+	evolution = 100,
+	friendship = 100,
+	happiness = 100,
+	hunger = 0,
+	morph = 50,
+	thirst = 0,
+	tiredness = 0
+}
+
 -- Console commands.
 commands.add_command("bpset", string.format("%s %s", DC.ICON, t.f("Set pet attributes.")), function(command)
 	if not command.player_index then return end
@@ -19,13 +36,22 @@ commands.add_command("bpset", string.format("%s %s", DC.ICON, t.f("Set pet attri
 	local args = {}
 	for token in string.gmatch(command.parameter or "", "%S+") do table.insert(args, token) end
 
-	if #args ~= 2 then
+	if #args == 0 or #args > 2 then
 		player.print(string.format("%s %s", DC.ICON,
 				t.f("Usage: /bpset <" .. t.f("field", "f") .. "> <" .. t.f("value", "f") .. ">")))
 		return
 	end
 
 	local field = string.lower(args[1])
+
+	-- Set pet attributes to ideal values.
+	if #args == 1 and field == "ideal" then
+		local state = pet_state.get_state(player.index)
+		for key, value in pairs(ideal_state) do if MA[key] then state[key] = value end end
+		player.print(string.format("%s %s", DC.ICON, t.f("Pet attributes set to ideal state.")))
+		return
+	end
+
 	local raw_value = tonumber(args[2])
 
 	if not raw_value then
@@ -33,7 +59,7 @@ commands.add_command("bpset", string.format("%s %s", DC.ICON, t.f("Set pet attri
 		return
 	end
 
-	local new_value = normalize.clamp(raw_value, 0, 100)
+	local new_value = clamp(raw_value, 0, 100)
 
 	if not MA[field] and field ~= "all" then
 		player.print(string.format("%s %s", DC.ICON, t.f(t.f("Field", "f") .. " parameter was not a valid attribute.")))
@@ -45,12 +71,12 @@ commands.add_command("bpset", string.format("%s %s", DC.ICON, t.f("Set pet attri
 
 	state[field] = new_value
 
+	-- Batch set pet attributes.
 	if field == "all" then
 		for attribute, _ in pairs(MA) do
 			state[attribute] = new_value
 			player.print(string.format("%s %s", DC.ICON, t.f("All attributes set to " .. t.f(new_value, "f") .. ".")))
 		end
-		return
 	else
 		player.print(string.format("%s %s", DC.ICON, t.f(
 				"Updated " .. t.f(field, "f") .. " from " .. t.f(old_value, "f") .. " to " .. t.f(new_value, "f") .. ".")))

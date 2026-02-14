@@ -65,8 +65,20 @@ local THRESHOLD_TO_SPRITE_MAP = {
 	energized = "energized"
 }
 
+local MORPH_THRESHOLDS = {
+	["biter"] = {
+		threshold = 100,
+		new_species = "spitter"
+	},
+	["spitter"] = {
+		threshold = 0,
+		new_species = "biter"
+	}
+}
+
 return {
 	MOOD_THRESHOLDS = MOOD_THRESHOLDS,
 	THRESHOLD_TO_SPRITE_MAP = THRESHOLD_TO_SPRITE_MAP,
-	BEHAVIORAL_THRESHOLDS = BEHAVIORAL_THRESHOLDS
+	BEHAVIORAL_THRESHOLDS = BEHAVIORAL_THRESHOLDS,
+	MORPH_THRESHOLDS = MORPH_THRESHOLDS
 }

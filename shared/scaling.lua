@@ -20,21 +20,21 @@ local SLEEP_SCALE = {
 	["pet-behemoth-biter-small"] = 2.025,
 	["pet-behemoth-biter-large"] = 2.050,
 
-	["pet-small-spitter-baby"] = 0.65,
-	["pet-small-spitter-small"] = 0.85,
-	["pet-small-spitter-large"] = 1.0,
+	["pet-small-spitter-baby"] = 0.600,
+	["pet-small-spitter-small"] = 0.625,
+	["pet-small-spitter-large"] = 0.650,
 
-	["pet-medium-spitter-baby"] = 0.65,
-	["pet-medium-spitter-small"] = 0.85,
-	["pet-medium-spitter-large"] = 1.0,
+	["pet-medium-spitter-baby"] = 1.000,
+	["pet-medium-spitter-small"] = 1.025,
+	["pet-medium-spitter-large"] = 1.050,
 
-	["pet-big-spitter-baby"] = 0.65,
-	["pet-big-spitter-small"] = 0.85,
-	["pet-big-spitter-large"] = 1.0,
+	["pet-big-spitter-baby"] = 1.500,
+	["pet-big-spitter-small"] = 1.525,
+	["pet-big-spitter-large"] = 1.550,
 
-	["pet-behemoth-spitter-baby"] = 0.65,
-	["pet-behemoth-spitter-small"] = 0.85,
-	["pet-behemoth-spitter-large"] = 1.0
+	["pet-behemoth-spitter-baby"] = 2.000,
+	["pet-behemoth-spitter-small"] = 2.025,
+	["pet-behemoth-spitter-large"] = 2.050
 }
 
 local SIZE_SCALE = {
@@ -54,21 +54,21 @@ local SIZE_SCALE = {
 	["pet-behemoth-biter-small"] = 0.950,
 	["pet-behemoth-biter-large"] = 1.000,
 
-	["pet-small-spitter-baby"] = 0.65,
-	["pet-small-spitter-small"] = 0.85,
-	["pet-small-spitter-large"] = 1.0,
+	["pet-small-spitter-baby"] = 0.625,
+	["pet-small-spitter-small"] = 0.635,
+	["pet-small-spitter-large"] = 0.645,
 
-	["pet-medium-spitter-baby"] = 0.65,
-	["pet-medium-spitter-small"] = 0.85,
-	["pet-medium-spitter-large"] = 1.0,
+	["pet-medium-spitter-baby"] = 0.685,
+	["pet-medium-spitter-small"] = 0.695,
+	["pet-medium-spitter-large"] = 0.705,
 
-	["pet-big-spitter-baby"] = 0.65,
-	["pet-big-spitter-small"] = 0.85,
-	["pet-big-spitter-large"] = 1.0,
+	["pet-big-spitter-baby"] = 0.745,
+	["pet-big-spitter-small"] = 0.755,
+	["pet-big-spitter-large"] = 0.765,
 
-	["pet-behemoth-spitter-baby"] = 0.65,
-	["pet-behemoth-spitter-small"] = 0.85,
-	["pet-behemoth-spitter-large"] = 1.0
+	["pet-behemoth-spitter-baby"] = 0.805,
+	["pet-behemoth-spitter-small"] = 0.815,
+	["pet-behemoth-spitter-large"] = 0.855,
 }
 
 local HEALTH_SCALE = {

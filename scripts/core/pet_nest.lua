@@ -37,7 +37,7 @@ local function clear_nest_area(surface, position, radius, types)
 	}
 	for _, ent in ipairs(entities) do if position_util.distance(ent.position, position) <= radius then ent.destroy() end end
 
-	-- Throw down some dirt.
+	-- Put some dirt in your eye.
 	local tiles = {}
 	for x = position.x - radius, position.x + radius do
 		for y = position.y - radius, position.y + radius do

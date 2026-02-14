@@ -10,19 +10,7 @@ local SPRITE_MAP = SM.SPRITE_MAP
 
 local pet_visuals = {}
 
-function pet_visuals.emote(player_index, entry, emote, fast_render)
-	local pet = entry.unit
-	local data = SPRITE_MAP[emote]
-	local sprite = (data and data.sprite) or emote
-
-	local sprite_render = pet_visuals.show_pet_reaction(player_index, entry, sprite, fast_render)
-
-	pet_audio.play_for_size(player_index, entry)
-
-	return sprite_render
-end
-
-function pet_visuals.show_pet_reaction(player_index, entry, sprite, fast_render)
+local function show_pet_reaction(player_index, entry, sprite, fast_render)
 	local fast_render = fast_render or false
 	if not (entry and entry.unit and entry.unit.valid) then return end
 
@@ -78,6 +66,18 @@ function pet_visuals.show_pet_reaction(player_index, entry, sprite, fast_render)
 
 	storage.pet_emote_sprite_queue = storage.pet_emote_sprite_queue or {}
 	table.insert(storage.pet_emote_sprite_queue, sprite_render)
+
+	return sprite_render
+end
+
+function pet_visuals.emote(player_index, entry, emote, fast_render)
+	local pet = entry.unit
+	local data = SPRITE_MAP[emote]
+	local sprite = (data and data.sprite) or emote
+
+	local sprite_render = show_pet_reaction(player_index, entry, sprite, fast_render)
+
+	pet_audio.play_for_size(player_index, entry)
 
 	return sprite_render
 end

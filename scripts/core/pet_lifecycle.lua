@@ -2,24 +2,24 @@
 -- This should take precedence over following, eating and sleeping, but not combat or fleeing.
 -- TODO: On player death; biter happiness should go to zero if friendship was high.
 -- Biter should follow corpse until it is picked up.
--- TODO: Go through project and make sure all functions only used locally are actually local.
--- TODO: Add morph logic and validate spitter evolution.
+
 local debug = require("scripts.utilities.debug")
 local notifications = require("scripts.utilities.notifications")
 local pet_behavior = require("scripts.core.pet_behavior")
 local pet_growth = require("scripts.core.pet_growth")
+local pet_modifiers = require("scripts.core.pet_modifiers")
+local pet_morph = require("scripts.core.pet_morph")
 local pet_reactions = require("scripts.core.pet_reactions")
 local pet_spawn = require("scripts.core.pet_spawn")
 local pet_state = require("scripts.core.pet_state")
+local pet_state_machine = require("scripts.core.pet_state_machine")
 local pet_visuals = require("scripts.core.pet_visuals")
 local position_util = require("scripts.utilities.position_util")
-local pet_modifiers = require("scripts.core.pet_modifiers")
-local pet_state_machine = require("scripts.core.pet_state_machine")
 
 local t = require("scripts.utilities.text_format")
 
-local FD = require("scripts.constants.reactions").FOOD_DEFINITIONS
 local BM = require("scripts.constants.biters").BITER_MAP
+local FD = require("scripts.constants.reactions").FOOD_DEFINITIONS
 local DC = require("scripts.constants.debug")
 local LC = require("scripts.constants.lifecycle")
 local TF = require("scripts.constants.text_format")
@@ -28,32 +28,33 @@ local pet_lifecycle = {}
 
 function pet_lifecycle.get_pet_entry(player_index)
 	storage.biter_pet = storage.biter_pet or {}
-
 	local entry = storage.biter_pet[player_index]
 
 	-- This table is mainly for pet lifecycle data.
 	if not entry then
 		entry = {
 			intro_notification_sent = false,
-			intro_end_tick = nil,
-			intro_pet_alert_threshold = nil,
 			is_orphaned = true,
-			biter_tier = "pet-small-biter-baby",
 			was_alive = true,
-			unit = nil,
-			current_form = "active"
+
+			biter_tier = "pet-small-biter-baby",
+			current_form = "active",
+			current_species = "biter"
 		}
 		storage.biter_pet[player_index] = entry
 	else
-		-- Migration safety.
-		entry.intro_notification_sent = entry.intro_notification_sent ~= nil and entry.intro_notification_sent or false
-		entry.intro_end_tick = entry.intro_end_tick ~= nil and entry.intro_end_tick or nil
-		entry.intro_pet_alert_threshold = entry.intro_pet_alert_threshold ~= nil and entry.intro_pet_alert_threshold or nil
-		entry.is_orphaned = entry.is_orphaned ~= nil and entry.is_orphaned or true
+		-- Lua, your falsy nils have caused be nothing but pain.
+		if entry.intro_notification_sent == nil then entry.intro_notification_sent = false end
+		if entry.is_orphaned == nil then entry.is_orphaned = true end
+		if entry.was_alive == nil then entry.was_alive = true end
+
 		entry.biter_tier = entry.biter_tier or "pet-small-biter-baby"
-		entry.was_alive = entry.was_alive ~= nil and entry.was_alive or true
-		entry.unit = entry.unit or nil
 		entry.current_form = entry.current_form or "active"
+		entry.current_species = entry.current_species or "biter"
+
+		-- Clear stale entity reference on reload.
+		entry.unit = nil
+
 	end
 
 	return entry
@@ -104,7 +105,8 @@ end
 
 local function handle_feeding_behavior(player_index, player, pet, entry)
 	local target = pet_state.get_feeding_target(player_index)
-	-- Food disappeared.
+
+	-- Food disappeared so abort.
 	if not (target and target.valid) then
 		pet_state.set_feeding_target(player_index, nil)
 		return false
@@ -133,6 +135,7 @@ local function handle_feeding_behavior(player_index, player, pet, entry)
 		pet_modifiers.apply_food_modifiers(player_index, entry, food_item)
 		pet_reactions.food_trigger(player_index, entry, food_item)
 		pet_state.set_feeding_target(player_index, nil)
+		pet_morph.evaluate_morph_state(player_index, pet, entry)
 		return true
 	end
 
@@ -321,17 +324,6 @@ local function state_seek_food(player_index, player, pet, entry)
 	end
 end
 
-function pet_lifecycle.state_paused(player_index, player, pet)
-	pet.commandable.set_command {
-		type = defines.command.go_to_location,
-		destination = pet.position,
-		radius = 0.1,
-		distraction = defines.distraction.none
-	}
-
-	if not pet_state.is_paused(player_index) then pet_state.set_behavior(player_index, "idle") end
-end
-
 local function state_eat(player_index, player, pet)
 	-- Eating is handled in handle_feeding_behavior().
 	-- This state exists only to transition into pause.
@@ -339,6 +331,9 @@ end
 
 local function state_follow(player_index, player, pet, entry)
 	if not (pet and pet.valid) then return end
+
+	-- Don't follow the player if they're moving around in map view.
+	if player.controller_type ~= defines.controllers.character then return end
 
 	-- Determine target position.
 	local target_position
@@ -425,8 +420,6 @@ local function evaluate_tiredness(player_index, pet, entry)
 	local thirst = pet_state.get_thirst(player_index)
 	local darkness = pet.surface.darkness
 
-	-- TODO: Test sleep cycle.
-	-- Wake logic.
 	if entry.current_form == "sleeping" then
 		if tiredness <= LC.TIREDNESS_WAKE_THRESHOLD or hunger >= LC.HUNGER_WAKE_THRESHOLD or thirst >=
 				LC.THIRST_WAKE_THRESHOLD or darkness <= LC.DARKNESS_THRESHOLD then

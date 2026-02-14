@@ -3,7 +3,8 @@ local pet_nest = require("scripts.core.pet_nest")
 local position_util = require("scripts.utilities.position_util")
 local t = require("scripts.utilities.text_format")
 
-local SC = require("scripts.constants.spawn")
+local SS = require("scripts.constants.spawn").SPAWN_SETTINGS
+local OM = require("scripts.constants.spawn").ORPHAN_MAP
 
 local pet_spawn = {}
 
@@ -16,7 +17,7 @@ function pet_spawn.choose_orphan_spawn(surface, origin)
 		attempts = attempts + 1
 
 		local angle = math.random() * math.pi * 2
-		local distance = SC.MINIMUM_SPAWN_DISTANCE + math.random() ^ 0.5 * SC.MAXIMUM_SPAWN_OFFSET
+		local distance = SS.minimum_spawn_distance + math.random() ^ 0.5 * SS.maximum_spawn_offset
 
 		local position = {
 			x = origin.x + math.cos(angle) * distance,
@@ -28,7 +29,7 @@ function pet_spawn.choose_orphan_spawn(surface, origin)
 		surface.force_generate_chunk_requests()
 
 		if not surface.get_tile(position).collides_with("water_tile") then
-			local valid = surface.find_non_colliding_position("pet-small-biter-baby", position, SC.SPAWN_SEARCH_RADIUS, SC.SEARCH_PRECISION)
+			local valid = surface.find_non_colliding_position("pet-small-biter-baby", position, SS.spawn_search_radius, SS.search_precision)
 			if valid then
 				successes = successes + 1
 				position_candidates[#position_candidates + 1] = valid
@@ -55,12 +56,13 @@ end
 
 function pet_spawn.spawn_orphan_baby(player, entry, generate_decoratives)
 	local surface = player.surface
+	local species = SS[entry.current_species] or "pet-small-biter-baby"
 
 	-- Store orphan respawn point in the event pet dies.
 	if not storage.pet_spawn_point then storage.pet_spawn_point = pet_spawn.choose_orphan_spawn(surface, player.position) end
 
 	-- Ensure the tile is actually walkable.
-	local position = surface.find_non_colliding_position("pet-small-biter-baby", storage.pet_spawn_point, 10, 0.5)
+	local position = surface.find_non_colliding_position(species, storage.pet_spawn_point, 10, 0.5)
 
 	if not position then
 		debug.info("Could not find a valid spawn location for the orphaned biter.")
@@ -69,9 +71,8 @@ function pet_spawn.spawn_orphan_baby(player, entry, generate_decoratives)
 
 	if generate_decoratives then pet_nest.decorate(surface, storage.pet_spawn_point) end
 
-	-- Spawn the orphaned pet.
 	local pet = surface.create_entity {
-		name = "pet-small-biter-baby",
+		name = species,
 		position = position,
 		force = game.forces["pet_orphan"]
 	}
@@ -81,7 +82,7 @@ function pet_spawn.spawn_orphan_baby(player, entry, generate_decoratives)
 
 	entry.unit = pet
 	entry.is_orphaned = true
-	entry.biter_tier = "pet-small-biter-baby" -- Reset pet tier for new orphans.
+	entry.biter_tier = species
 	debug.info("Orphaned biter has spawned.")
 end
 
@@ -89,8 +90,7 @@ function pet_spawn.spawn_pet_for_player(player, entry)
 	local player_index = player.index
 	local now = game.tick
 
-	-- Check if biter was alive but is now missing (despawn and bug recovery).
-	-- Assume that if entry.unit is nil and entry.was_alive is true, it's a lost pet.
+	-- Assume that if unit is nil and it was preivously alive then it's a lost pet.
 	if entry.was_alive and (not entry.unit or not entry.unit.valid) then
 		local tier = entry.biter_tier or "pet-small-biter-baby"
 		debug.info(string.format("Recovering lost pet %s", t.f(tier, "f")))
@@ -106,17 +106,16 @@ function pet_spawn.spawn_pet_for_player(player, entry)
 		end
 	end
 
-	-- If the biter is was legitimately killed, spawn a new one after one game day.
+	-- If pet was legitimately killed then spawn a new orphan after a day or two.
 	if not (entry.unit and entry.unit.valid) then
 		entry.was_alive = false
 		local last_death = entry.last_death_tick or 0
-		--		if (now - last_death) >= SC.TICKS_PER_DAY then
-		if (now - last_death) >= 300 then
+		if (now - last_death) >= SS.ticks_per_day then
 			debug.info("Spawning replacement orphan.")
 			pet_spawn.spawn_orphan_baby(player, entry, false)
 			entry.was_alive = true
 		else
-			local remaining = math.floor((SC.TICKS_PER_DAY - (now - last_death)) / 60)
+			local remaining = math.floor((SS.ticks_per_day - (now - last_death)) / 60)
 			debug.trace(string.format("Pet spawn will trigger in %s seconds.", t.f(remaining, "f")))
 		end
 	end

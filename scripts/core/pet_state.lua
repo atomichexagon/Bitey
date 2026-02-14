@@ -4,7 +4,8 @@ local t = require("scripts.utilities.text_format")
 
 local TF = require("scripts.constants.text_format")
 local DC = require("scripts.constants.debug")
-local SC = require("scripts.constants.spawn").PET_DEFAULTS
+local SD = require("scripts.constants.spawn").STATE_DEFAULTS
+local SS = require("scripts.constants.spawn").SPAWN_SETTINGS
 local NI = require("scripts.constants.needs").NEED_INTERVALS
 local NR = require("scripts.constants.needs").NEED_RATES
 local RS = require("scripts.constants.visuals").RENDER_SETTINGS
@@ -22,29 +23,30 @@ local function ensure_state(player_index)
 	if not state then
 		-- Brand new pet state.
 		state = {
-			boredom = SC.boredom,
-			evolution = SC.evolution,
-			friendship = SC.friendship,
-			happiness = SC.happiness,
-			hunger = SC.hunger,
-			morph = SC.morph,
-			thirst = SC.thirst,
-			tiredness = SC.tiredness,
-			current_form = SC.current_form,
-			feeding_target = SC.feeding_target
+			boredom = SD.boredom,
+			evolution = SD.evolution,
+			friendship = SD.friendship,
+			happiness = SD.happiness,
+			hunger = SD.hunger,
+			morph = SD.morph,
+			thirst = SD.thirst,
+			tiredness = SD.tiredness,
+			current_form = SD.current_form,
+			feeding_target = SD.feeding_target,
+			attack_target = SD.attack_target
 		}
 		storage.pet_state[player_index] = state
 	else
-		state.boredom = state.boredom or SC.boredom
-		state.evolution = state.evolution or SC.evolution
-		state.friendship = state.friendship or SC.friendship
-		state.happiness = state.happiness or SC.happiness
-		state.hunger = state.hunger or SC.hunger
-		state.morph = state.morph or SC.morph
-		state.thirst = state.thirst or SC.thirst
-		state.tiredness = state.tiredness or SC.tiredness
-		state.current_form = state.current_form or SC.current_form
-		state.feeding_target = state.feeding_target or SC.feeding_target
+		state.boredom = state.boredom or SD.boredom
+		state.evolution = state.evolution or SD.evolution
+		state.friendship = state.friendship or SD.friendship
+		state.happiness = state.happiness or SD.happiness
+		state.hunger = state.hunger or SD.hunger
+		state.morph = state.morph or SD.morph
+		state.thirst = state.thirst or SD.thirst
+		state.tiredness = state.tiredness or SD.tiredness
+		state.feeding_target = state.feeding_target or SD.feeding_target
+		state.attack_target = state.attack_target or SD.attack_target
 	end
 
 	return state
@@ -96,7 +98,7 @@ end
 
 function pet_state.queue_emote(player_index, pet, emote)
 	local emote_state = ensure_queue(player_index)
-	if pet and pet.valid then
+	if (pet and pet.valid) then
 		local emote_state = storage.emote_state[player_index]
 		emote_state.queue[#emote_state.queue + 1] = emote
 	end
@@ -193,7 +195,7 @@ end
 -- Top 10 anime betrayal of all time.
 function pet_state.switch_to_enemy_force(player_index, entry)
 	local pet = entry.unit
-	if not pet and pet.valid then return end
+	if not (pet and pet.valid) then return end
 	pet.force = game.forces["enemy"]
 end
 
@@ -389,7 +391,7 @@ function pet_state.set_hunger(player_index, value)
 end
 
 local function debug_needs_update(label, new_state, old_state)
-	if not DC.DEBUG_SHOW_NEEDS_UPDATES or not (debug.current_level >= 3) then return end
+	if not DC.DEBUG_SHOW_NEEDS_UPDATES then return end
 	local verb = (new_state > old_state and "increased") or (new_state < old_state and "decreased") or "unchanged"
 	debug.info(string.format("%s %s from %s to %s.", t.f(label, "i"), verb, t.f(old_state, "f"), t.f(new_state, "f")))
 end

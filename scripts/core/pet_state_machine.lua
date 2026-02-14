@@ -4,11 +4,9 @@ local pet_state = require("scripts.core.pet_state")
 local position_util = require("scripts.utilities.position_util")
 local t = require("scripts.utilities.text_format")
 
+local SS = require("__biter-pet__.shared.scaling").SLEEP_SCALE
 local LC = require("scripts.constants.lifecycle")
 
-local SCALING = require("__biter-pet__.shared.scaling")
-local SCALE = SCALING.SIZE_SCALE
-local SLEEP_SCALE = SCALING.SLEEP_SCALE
 
 local pet_state_machine = {}
 
@@ -73,9 +71,9 @@ function pet_state_machine.enter_active(player_index, entry)
 	entry.current_form = "active"
 end
 
-local function get_sleep_animation_name(orientation)
+local function get_sleep_animation_name(orientation, species)
 	local suffix = (orientation <= 0.5) and "right" or "left"
-	return string.format("pet-sleeping-animation-%s", suffix)
+	return string.format("sleeping-%s-%s", suffix, species)
 end
 
 function pet_state_machine.enter_sleep(player_index, entry)
@@ -87,9 +85,10 @@ function pet_state_machine.enter_sleep(player_index, entry)
 	local position = pet.position
 	local force = pet.force
 	local name = normalize.name(pet.name)
-	local scale_factor = SLEEP_SCALE[name] * 0.5
+	local scale_factor = SS[name] * 0.5
 	local sleeper_name = string.format("%s%s", name, "-sleeping")
-	local animation = get_sleep_animation_name(pet.orientation)
+	local species = entry.current_species or "biter"
+	local animation = get_sleep_animation_name(pet.orientation, species)
 	entry.sleep_direction = pet.orientation
 	normalize.clear_emote_queue(player_index)
 	pet.destroy()

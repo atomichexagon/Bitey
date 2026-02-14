@@ -72,6 +72,9 @@ local SPRITE_MAP = {
 	thirsty = {
 		sprite = "fluid/water"
 	},
+	cringe = {
+		sprite = "cringe"
+	},
 	-- Boredom emotes.
 	bored = {
 		sprite = "bored"

@@ -3,29 +3,15 @@ local pet_state = require("scripts.core.pet_state")
 
 local t = require("scripts.utilities.text_format")
 
-local MODIFIER_CONSTANTS = require("scripts.constants.modifiers")
-local FOOD_MODIFIERS = MODIFIER_CONSTANTS.FOOD_MODIFIERS
-local COMBAT_MODIFIERS = MODIFIER_CONSTANTS.COMBAT_MODIFIERS
-local MOOD_BONUS_SCALER = MODIFIER_CONSTANTS.MOOD_BONUS_SCALER
+local MOOD_BONUS_SCALER = require("scripts.constants.modifiers").MOOD_BONUS_SCALER
 
-local REACTION_CONSTANTS = require("scripts.constants.reactions")
-local FOOD_DEFINITIONS = REACTION_CONSTANTS.FOOD_DEFINITIONS
-local COMBAT_REACTIONS = REACTION_CONSTANTS.COMBAT_REACTIONS
+local FM = require("scripts.constants.modifiers").FOOD_MODIFIERS
+local CM = require("scripts.constants.modifiers").COMBAT_MODIFIERS
+local BM = require("scripts.constants.modifiers").BEHAVIORAL_MODIFIERS
 
 local DC = require("scripts.constants.debug")
 
 local pet_modifiers = {}
-
-local STATE_MODIFIER_KEYS = {
-	"boredom",
-	"evolution",
-	"friendship",
-	"happiness",
-	"hunger",
-	"morph",
-	"thirst",
-	"tiredness"
-}
 
 local STATE_APPLIERS = {
 	boredom = pet_state.add_boredom,
@@ -38,27 +24,21 @@ local STATE_APPLIERS = {
 	tiredness = pet_state.add_tiredness
 }
 
-local function ensure_all_modifiers_have_values(modifiers)
-	local safe_modifiers = {}
-	for _, key in ipairs(STATE_MODIFIER_KEYS) do safe_modifiers[key] = modifiers[key] or 0 end
-	return safe_modifiers
-end
-
 local function batch_modify_state(player_index, modifiers, mood_bonus)
 	local mood_bonus = mood_bonus or 0
-	local safe_modifiers = ensure_all_modifiers_have_values(modifiers)
 
-	for key, value in pairs(safe_modifiers) do
-		local func = STATE_APPLIERS[key]
-		if func then
+	for key, value in pairs(modifiers) do
+		local target_function = STATE_APPLIERS[key]
+
+		if target_function then
 			if key == "boredom" then
-				func(player_index, value - mood_bonus)
+				target_function(player_index, value - mood_bonus)
 			elseif key == "happiness" then
-				func(player_index, value + mood_bonus)
+				target_function(player_index, value + mood_bonus)
 			elseif key == "friendship" then
-				func(player_index, value + mood_bonus)
+				target_function(player_index, value + mood_bonus)
 			else
-				func(player_index, value)
+				target_function(player_index, value)
 			end
 		end
 	end
@@ -67,7 +47,7 @@ end
 function pet_modifiers.apply_cowardice_modifiers(player_index, entry)
 	debug.info("Apply modifiers for fleeing from combat.")
 
-	local modifiers = COMBAT_MODIFIERS["cowardice"]
+	local modifiers = CM["cowardice"]
 	if not modifiers then
 		debug.warn("Combat modifer table missing entry for cowardice.")
 		return
@@ -75,17 +55,26 @@ function pet_modifiers.apply_cowardice_modifiers(player_index, entry)
 	batch_modify_state(player_index, modifiers)
 end
 
-function pet_modifiers.apply_food_modifiers(player_index, entry, food)
-	if DC.DEBUG_SHOW_NEEDS_UPDATES and debug.current_level >= 3 then
-		debug.info(string.format("Applying modifiers for eating %s", food))
+function pet_modifiers.apply_friendly_fire_modifiers(player_index, entry, key)
+	debug.info("Apply modifiers for incurring damage.")
+
+	local modifiers = BM[key]
+	if not modifiers then
+		debug.warn("Behavioral modifer table missing entry for " .. t.f(key, "f") .. ".")
+		return
 	end
 
-	local modifiers = FOOD_MODIFIERS[food]
+	batch_modify_state(player_index, modifiers)
+end
+
+function pet_modifiers.apply_food_modifiers(player_index, entry, food)
+	if DC.DEBUG_SHOW_NEEDS_UPDATES then debug.trace(string.format("Applying modifiers for eating %s", food)) end
+
+	local modifiers = FM[food]
 	if not modifiers then
 		debug.warn(string.format("Food modifier table missing entry for %s", t.f(food, "w")))
 		return
 	end
-
 	-- Scale modifiers based on hunger severity.
 	local state = pet_state.get(player_index)
 	local mood_bonus = math.floor((state.hunger ^ 1.1) * (MOOD_BONUS_SCALER / 1000))

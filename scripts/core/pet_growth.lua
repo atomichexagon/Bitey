@@ -51,10 +51,6 @@ local function upgrade_pet(player_index, entry, new_name)
 	return entry
 end
 
---[[
- /c game.forces["enemy"].set_evolution_factor(0.99, game.player.surface)
- ]]
-
 function pet_growth.try_grow(player_index, entry)
 	local pet = entry.unit
 	if not (pet and pet.valid) then return end
@@ -87,7 +83,7 @@ function pet_growth.try_grow(player_index, entry)
 	if entry then
 		pet_state.force_emote(player_index, entry, "ecstatic")
 		pet = entry.unit
-		if not pet or not pet.valid then return end
+		if not (pet and pet.valid) then return end
 		local player = game.get_player(player_index)
 		notifications.notify(player, pet, {
 			type = "entity",
