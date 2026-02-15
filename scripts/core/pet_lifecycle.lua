@@ -25,6 +25,11 @@ local TF = require("scripts.constants.text_format")
 
 local pet_lifecycle = {}
 
+function pet_lifecycle.peek_pet_entry(player_index)
+	local pets = sotrage.biter_pet
+	return pets and pets[player_index] or nil
+end
+
 function pet_lifecycle.get_pet_entry(player_index)
 	storage.biter_pet = storage.biter_pet or {}
 	local entry = storage.biter_pet[player_index]
@@ -38,7 +43,8 @@ function pet_lifecycle.get_pet_entry(player_index)
 
 			biter_tier = "pet-small-biter-baby",
 			current_form = "active",
-			current_species = "biter"
+			current_species = "biter",
+			unit = nil
 		}
 		storage.biter_pet[player_index] = entry
 	else
@@ -69,7 +75,7 @@ local function set_behavior_state(player_index, pet, entry, behavior)
 	end
 end
 
-local function find_nearest_interactable_item(player_index, pet)
+local function find_nearest_interactable_item(player_index, pet, entry)
 	if not (pet and pet.valid) then return nil end
 
 	local surface = pet.surface
@@ -105,8 +111,9 @@ local function find_nearest_interactable_item(player_index, pet)
 		if not interactable_item then goto continue end
 
 		local passes_need_check = (not interactable_item.need_check) or interactable_item.need_check(needs)
-		if not interactable_item.need_check(needs) then game.print("failed need check") end
 		if not passes_need_check then goto continue end
+
+		if interactable_item.interaction == "fetch" and entry.is_orphaned then goto continue end
 
 		local distance_squared = position_util.distance_squared(position, item.position)
 		if distance_squared < best_distance_squared then
@@ -241,9 +248,9 @@ local function state_flee(player_index, player, pet, entry)
 	end
 end
 
-local function evaluate_target(player_index, pet, target)
+local function evaluate_target(player_index, pet, entry, target)
 	if not (target and target.valid) then
-		local item_target = find_nearest_interactable_item(player_index, pet)
+		local item_target = find_nearest_interactable_item(player_index, pet, entry)
 		if item_target then
 			pet_state.set_item_target(player_index, item_target)
 			pet_state.set_behavior(player_index, "seek_item")
@@ -253,18 +260,13 @@ local function evaluate_target(player_index, pet, target)
 end
 
 local function ensure_pet(player_index, entry)
-	if not (entry.unit and entry.unit.valid) then
-		pet_spawn.spawn_pet_for_player(game.get_player(player_index), entry)
+	local player = game.get_player(player_index)
+	if not entry.unit or not entry.unit.valid then
+		pet_spawn.spawn_pet_for_player(player_index, player, entry)
 		return entry.unit
 	end
 
-	local pet = entry.unit
-	if not (pet and pet.valid and pet.type == "unit") then
-		pet_spawn.spawn_pet_for_player(game.get_player(player_index), entry)
-		return entry.unit
-	end
-
-	return pet
+	return entry.unit
 end
 
 local function handle_pause(player_index, entry, pet)
@@ -312,6 +314,7 @@ local function biter_was_adopted(player, player_index, pet, entry)
 end
 
 local function state_seek_item(player_index, player, pet, entry)
+
 	local target = pet_state.get_item_target(player_index)
 	if not (target and target.valid) then
 		pet_state.set_behavior(player_index, "idle")
@@ -416,6 +419,7 @@ local function state_attack(player_index, player, pet, entry)
 end
 
 local function state_return_item(player_index, player, pet, entry)
+
 	local item_name = pet_state.get_returnable_item(player_index)
 	if not item_name then
 		pet_state.set_behavior(player_index, "idle")
@@ -488,6 +492,7 @@ local function evaluate_returnable_item_state(player_index, player, pet)
 end
 
 local function process_pet(player_index, entry)
+
 	local player = game.get_player(player_index)
 	if not is_player_valid(player) then return end
 
@@ -548,7 +553,7 @@ local function process_pet(player_index, entry)
 	if behavior ~= "return_item" then
 		debug.trace(string.format("Took target evaluation branch %s", t.f("ATTACK", "f")))
 		local target = pet_state.get_item_target(player_index)
-		evaluate_target(player_index, pet, target)
+		evaluate_target(player_index, pet, entry, target)
 	end
 
 	-- State branching.
@@ -597,9 +602,7 @@ function pet_lifecycle.on_entity_died(event)
 			entry.last_death_tick = game.tick -- Record the time of death.
 
 			local player = game.get_player(player_index)
-			if player then
-				notifications.notify(player, "Oh no...")
-			end
+			if player then notifications.notify(player, "Oh no...") end
 			break
 		end
 	end

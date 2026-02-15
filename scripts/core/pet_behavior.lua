@@ -30,7 +30,7 @@ local function process_intro_notification(player_index, entry)
 		if now > entry.intro_pet_alert_threshold then
 			local direction = position_util.get_direction_of_position(player.position, pet.position)
 			if direction then
-				notifications.notify(player, string.format("I heard a scream to the %s...", direction))
+				notifications.notify(player, string.format("I heard something to the %s...", direction))
 			end
 			entry.intro_notification_sent = true
 			audio.play_global_sound(player, "death-rattle")

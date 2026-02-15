@@ -110,8 +110,7 @@ local function start_next_forced_emote(player_index, entry, fast_render)
 	local emote_state = ensure_queue(player_index)
 	local next_emote = table.remove(emote_state.forced_queue, 1)
 	if not next_emote then return end
-	local behavior = pet_state.get_behavior(player_index)
-	local sprite_render = pet_visuals.emote(player_index, entry, next_emote, fast_render, behavior)
+	local sprite_render = pet_visuals.emote(player_index, entry, next_emote, fast_render)
 	emote_state.sprite_render = sprite_render
 	emote_state.active_emote = next_emote
 	emote_state.active_type = "forced"
@@ -186,8 +185,7 @@ local function tick_emotes(player_index, entry)
 	local next_emote = emote_state.queue[1]
 	if next_emote then
 		table.remove(emote_state.queue, 1)
-		local behavior = pet_state.get_behavior(player_index)
-		local sprite_render = pet_visuals.emote(player_index, entry, next_emote, false, behavior)
+		local sprite_render = pet_visuals.emote(player_index, entry, next_emote)
 		emote_state.sprite_render = sprite_render
 		emote_state.active_emote = next_emote
 		emote_state.ends_at_tick = now + (RS.EMOTE_DURATION or 180)

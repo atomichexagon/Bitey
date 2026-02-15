@@ -27,13 +27,24 @@ function events.on_init()
 	pet_init.initialize_storage()
 	pet_init.create_orphan_force()
 	pet_init.check_existing_research()
+
+	for _, player in pairs(game.players) do ensure_pet_exists(player) end
+
+	storage.mod_initialized = true
 end
 
+-- TODO: Test mod on existing save that didn't have mod enabled to make sure this prevent pet cloning bug.
 function events.on_configuration_changed(cfg)
 	pet_init.initialize_storage()
 	pet_init.create_orphan_force()
 	pet_init.check_existing_research()
-	for _, player in pairs(game.players) do ensure_pet_exists(player) end
+
+	if not storage.mod_initialized then
+		for _, player in pairs(game.players) do
+			ensure_pet_exists(player)
+		end
+		storage.mod_initialized = true
+	end
 end
 
 function events.on_load()

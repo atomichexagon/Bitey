@@ -68,11 +68,13 @@ local THRESHOLD_TO_SPRITE_MAP = {
 local MORPH_THRESHOLDS = {
 	["biter"] = {
 		threshold = 100,
-		new_species = "spitter"
+		new_species = "spitter",
+		trigger = "sulfuric-acid-barrel"
 	},
 	["spitter"] = {
 		threshold = 0,
-		new_species = "biter"
+		new_species = "biter",
+		trigger = "stone"
 	}
 }
 

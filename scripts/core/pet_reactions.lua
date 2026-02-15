@@ -29,7 +29,7 @@ function pet_reactions.process_item_interaction(player_index, pet, entry, item_n
 	if item.interaction == "eat" then
 		if not entry.is_orphaned then
 			pet_growth.try_grow(player_index, entry)
-			pet_morph.evaluate_morph_state(player_index, pet, entry)
+			pet_morph.evaluate_morph_state(player_index, pet, entry, item_name)
 		end
 		pet_state.set_behavior(player_index, "eat")
 

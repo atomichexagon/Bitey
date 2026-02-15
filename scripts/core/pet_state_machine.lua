@@ -119,11 +119,6 @@ function pet_state_machine.enter_sleep(player_index, entry)
 	entry.unit = sleeper
 	entry.current_form = "sleeping"
 
-	-- TODO: Add play_sound=true/false to emote table.
-	-- TODO: Add custom fade_rate key to emote table.
-	-- TODO: Add biter snoring sound if doable or just lower roar sound when sleeping.
-	-- TODO: Switch from default biter emote roars to snoring sounds if current_form="sleeping"
-	-- TODO: Maybe add custom light color to mood emotes when biter is "dreaming".
 	pet_state.force_emote(player_index, entry, "sleeping", false)
 end
 

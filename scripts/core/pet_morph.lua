@@ -33,7 +33,7 @@ local function swap_species(player_index, pet, entry, new_prototype, new_species
 	entry.biter_tier = new_prototype
 end
 
-function pet_morph.evaluate_morph_state(player_index, pet, entry)
+function pet_morph.evaluate_morph_state(player_index, pet, entry, item_name)
 	local state = pet_state.get_state(player_index)
 	local morph = state.morph
 	local rules = MT[entry.current_species]
@@ -46,9 +46,10 @@ function pet_morph.evaluate_morph_state(player_index, pet, entry)
 	local new_species = rules.new_species
 
 	if not new_prototype then return end
+	if item_name ~= rules.trigger then return end
 
 	-- It's morbin' time... I mean morphin' time.
-	pet_state.force_emote(player_index, entry, "cringe")
+	pet_state.force_emote(player_index, entry, "horrified")
 	swap_species(player_index, pet, entry, new_prototype, new_species)
 end
 

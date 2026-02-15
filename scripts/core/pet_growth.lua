@@ -28,7 +28,6 @@ local function upgrade_pet(player_index, entry, new_name)
 	normalize.clear_emote_queue(player_index)
 
 	old_unit.destroy()
-
 	local new_pet = surface.create_entity {
 		name = new_name,
 		position = position,

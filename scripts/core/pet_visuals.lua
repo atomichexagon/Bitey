@@ -7,7 +7,7 @@ local SM = require("scripts.constants.sprites").SPRITE_MAP
 
 local pet_visuals = {}
 
-local function show_pet_reaction(player_index, entry, sprite, fast_render, behavior)
+local function show_pet_reaction(player_index, entry, sprite, fast_render)
 	local fast_render = fast_render or false
 	if not (entry and entry.unit and entry.unit.valid) then return end
 
@@ -34,7 +34,7 @@ local function show_pet_reaction(player_index, entry, sprite, fast_render, behav
 		time_to_live = RS.TIME_TO_LIVE_FALLBACK
 	}
 
-	local color = (behavior == "sleeping" and RS.EMOTE_SLEEPING_LIGHT_COLOR) or RS.EMOTE_WAKING_LIGHT_COLOR
+	local color = (entry.current_form == "sleeping" and RS.EMOTE_SLEEPING_LIGHT_COLOR) or RS.EMOTE_WAKING_LIGHT_COLOR
 	local light_id = rendering.draw_light {
 		sprite = RS.EMOTE_LIGHT_SPRITE,
 		target = target,
@@ -67,12 +67,12 @@ local function show_pet_reaction(player_index, entry, sprite, fast_render, behav
 	return sprite_render
 end
 
-function pet_visuals.emote(player_index, entry, emote, fast_render, behavior)
+function pet_visuals.emote(player_index, entry, emote, fast_render)
 	local pet = entry.unit
 	local data = SM[emote]
 	local sprite = (data and data.sprite) or emote
 
-	local sprite_render = show_pet_reaction(player_index, entry, sprite, fast_render, behavior)
+	local sprite_render = show_pet_reaction(player_index, entry, sprite, fast_render)
 
 	pet_audio.play_for_size(player_index, entry)
 

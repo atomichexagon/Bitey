@@ -86,8 +86,7 @@ function pet_spawn.spawn_orphan_baby(player, entry, generate_decoratives)
 	debug.info("Orphaned biter has spawned.")
 end
 
-function pet_spawn.spawn_pet_for_player(player, entry)
-	local player_index = player.index
+function pet_spawn.spawn_pet_for_player(player_index, player, entry)
 	local now = game.tick
 
 	-- Assume that if unit is nil and it was preivously alive then it's a lost pet.
