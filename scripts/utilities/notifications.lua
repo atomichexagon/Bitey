@@ -1,7 +1,10 @@
 local debug = require("scripts.utilities.debug")
+
+local FT = require("scripts.constants.notifications").FETCH_FLAVOR_TEXT
+
 local notifications = {}
 
-function notifications.notify(player, entity, icon, message, sound)
+function notifications.notify(player, message, sound)
 	if sound then
 		player.play_sound {
 			path = sound,
@@ -34,6 +37,14 @@ function notifications.notify(player, entity, icon, message, sound)
 			time_to_live = 300
 		}
 	end
+end
+
+function notifications.fetch_flavor_text(player, entry)
+	local count = #FT
+	if count == 0 then return end
+	local index = (entry.fetch_plays % count) + 1
+	local message = FT[index]
+	notifications.notify(player, message)
 end
 
 return notifications

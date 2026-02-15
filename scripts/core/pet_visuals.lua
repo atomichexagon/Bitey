@@ -2,15 +2,12 @@ local debug = require("scripts.utilities.debug")
 local pet_audio = require("scripts.core.pet_audio")
 local util = require("util")
 
-local PET_VISUALS_CONSTANTS = require("scripts.constants.visuals")
-local RENDER_SETTINGS = PET_VISUALS_CONSTANTS.RENDER_SETTINGS
-
-local SM = require("scripts.constants.sprites")
-local SPRITE_MAP = SM.SPRITE_MAP
+local RS = require("scripts.constants.visuals").RENDER_SETTINGS
+local SM = require("scripts.constants.sprites").SPRITE_MAP
 
 local pet_visuals = {}
 
-local function show_pet_reaction(player_index, entry, sprite, fast_render)
+local function show_pet_reaction(player_index, entry, sprite, fast_render, behavior)
 	local fast_render = fast_render or false
 	if not (entry and entry.unit and entry.unit.valid) then return end
 
@@ -21,44 +18,44 @@ local function show_pet_reaction(player_index, entry, sprite, fast_render)
 		entity = pet,
 		offset = {
 			0,
-			RENDER_SETTINGS.EMOTE_VERTICAL_OFFSET
+			RS.EMOTE_VERTICAL_OFFSET
 		}
 	}
-	if fast_render then
-		debug.trace(string.format("Fast render queued for sprite [img=%s].", sprite))
-	else
-		debug.trace(string.format("Standard render queued for sprite [img=%s].", sprite))
-	end
-	
+
+	local debug_descriptor = (fast_render and "Fast render") or "Standard render"
+	debug.trace(string.format("%s queued for sprite [img=%s].", debug_descriptor, sprite))
+
 	local sprite_id = rendering.draw_sprite {
 		sprite = sprite,
 		target = target,
 		surface = pet.surface,
-		x_scale = RENDER_SETTINGS.EMOTE_SCALE,
-		y_scale = RENDER_SETTINGS.EMOTE_SCALE,
-		time_to_live = RENDER_SETTINGS.TIME_TO_LIVE_FALLBACK
+		x_scale = RS.EMOTE_SCALE,
+		y_scale = RS.EMOTE_SCALE,
+		time_to_live = RS.TIME_TO_LIVE_FALLBACK
 	}
 
+	local color = (behavior == "sleeping" and RS.EMOTE_SLEEPING_LIGHT_COLOR) or RS.EMOTE_WAKING_LIGHT_COLOR
 	local light_id = rendering.draw_light {
-		sprite = RENDER_SETTINGS.EMOTE_LIGHT_SPRITE,
+		sprite = RS.EMOTE_LIGHT_SPRITE,
 		target = target,
+		color = color,
 		surface = pet.surface,
-		intensity = RENDER_SETTINGS.EMOTE_LIGHT_VALUE,
-		scale = RENDER_SETTINGS.EMOTE_LIGHT_VALUE,
-		time_to_live = RENDER_SETTINGS.TIME_TO_LIVE_FALLBACK
+		intensity = RS.EMOTE_LIGHT_VALUE,
+		scale = RS.EMOTE_LIGHT_VALUE,
+		time_to_live = RS.TIME_TO_LIVE_FALLBACK
 	}
 
 	local sprite_render = {
 		sprite = sprite_id,
 		light = light_id,
 		color = {
-			r = 1,
-			g = 1,
-			b = 1,
-			a = 1
+			r = 255,
+			g = 255,
+			b = 255,
+			a = 255
 		},
 		start_tick = game.tick,
-		fade = RENDER_SETTINGS.EMOTE_FADE_RATE,
+		fade = RS.EMOTE_FADE_RATE,
 		player_index = player_index,
 		entry = entry,
 		fast_render = fast_render
@@ -70,12 +67,12 @@ local function show_pet_reaction(player_index, entry, sprite, fast_render)
 	return sprite_render
 end
 
-function pet_visuals.emote(player_index, entry, emote, fast_render)
+function pet_visuals.emote(player_index, entry, emote, fast_render, behavior)
 	local pet = entry.unit
-	local data = SPRITE_MAP[emote]
+	local data = SM[emote]
 	local sprite = (data and data.sprite) or emote
 
-	local sprite_render = show_pet_reaction(player_index, entry, sprite, fast_render)
+	local sprite_render = show_pet_reaction(player_index, entry, sprite, fast_render, behavior)
 
 	pet_audio.play_for_size(player_index, entry)
 

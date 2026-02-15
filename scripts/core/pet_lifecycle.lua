@@ -2,7 +2,6 @@
 -- This should take precedence over following, eating and sleeping, but not combat or fleeing.
 -- TODO: On player death; biter happiness should go to zero if friendship was high.
 -- Biter should follow corpse until it is picked up.
-
 local debug = require("scripts.utilities.debug")
 local notifications = require("scripts.utilities.notifications")
 local pet_behavior = require("scripts.core.pet_behavior")
@@ -19,7 +18,7 @@ local position_util = require("scripts.utilities.position_util")
 local t = require("scripts.utilities.text_format")
 
 local BM = require("scripts.constants.biters").BITER_MAP
-local FD = require("scripts.constants.reactions").FOOD_DEFINITIONS
+local ID = require("scripts.constants.reactions").ITEM_DEFINITIONS
 local DC = require("scripts.constants.debug")
 local LC = require("scripts.constants.lifecycle")
 local TF = require("scripts.constants.text_format")
@@ -70,83 +69,89 @@ local function set_behavior_state(player_index, pet, entry, behavior)
 	end
 end
 
-local function find_nearest_food(pet)
+local function find_nearest_interactable_item(player_index, pet)
 	if not (pet and pet.valid) then return nil end
 
 	local surface = pet.surface
 	local position = pet.position
 
-	-- Detect items on ground near pet.
+	-- Find all item entities within search radius.
 	local items = surface.find_entities_filtered {
 		position = position,
-		radius = LC.FOOD_SEARCH_RADIUS,
+		radius = LC.ITEM_SEARCH_RADIUS,
 		type = "item-entity"
 	}
 
 	local nearest = nil
 	local best_distance_squared = math.huge
 
+	local needs = {
+		hunger = pet_state.get_hunger(player_index),
+		thirst = pet_state.get_thirst(player_index),
+		boredom = pet_state.get_boredom(player_index),
+		tiredness = pet_state.get_tiredness(player_index)
+	}
+
+	local returnable_item = pet_state.get_returnable_item(player_index)
+
+	-- Return the nearest interactable item.
 	for _, item in ipairs(items) do
-		if item.valid and item.stack and item.stack.valid_for_read then
-			local name = item.stack.name
-			local food_type = FD[name]
-			if food_type then
-				local distance_squared = position_util.distance_squared(position, item.position)
-				if distance_squared < best_distance_squared then
-					best_distance_squared = distance_squared
-					nearest = item
-				end
-			end
+		if not (item.stack and item.stack.valid_for_read) then goto continue end
+		local name = item.stack.name
+		if name == returnable_item then goto continue end
+
+		local interactable_item = ID[name]
+
+		if not interactable_item then goto continue end
+
+		local passes_need_check = (not interactable_item.need_check) or interactable_item.need_check(needs)
+		if not interactable_item.need_check(needs) then game.print("failed need check") end
+		if not passes_need_check then goto continue end
+
+		local distance_squared = position_util.distance_squared(position, item.position)
+		if distance_squared < best_distance_squared then
+			best_distance_squared = distance_squared
+			nearest = item
 		end
+		::continue::
 	end
 
 	return nearest
 end
 
-local function handle_feeding_behavior(player_index, player, pet, entry)
-	local target = pet_state.get_feeding_target(player_index)
+local function handle_item_interaction(player_index, player, pet, entry)
+	local target = pet_state.get_item_target(player_index)
 
-	-- Food disappeared so abort.
+	-- Pathing target disappeared.
 	if not (target and target.valid) then
-		pet_state.set_feeding_target(player_index, nil)
+		pet_state.set_item_target(player_index, nil)
 		return false
 	end
 
-	-- Check if pet is near edible food.
+	-- Path toward item until it's within interaction radius.
 	local distance = position_util.distance_squared(pet.position, target.position)
-
-	if distance <= (LC.EAT_RADIUS * LC.EAT_RADIUS) then
+	if distance > LC.INTERACT_RADIUS_SQUARED then
 		pet.commandable.set_command {
-			type = defines.command.stop,
+			type = defines.command.go_to_location,
+			destination = target.position,
+			radius = LC.INTERACT_RADIUS,
 			distraction = defines.distraction.none
 		}
-
-		local stack = target.stack
-		local food_item = stack.name
-		local food = FD[food_item]
-
-		if not food then
-			pet_state.set_feeding_target(player_index, nil)
-			return false
-		end
-
-		-- Eat the food.
-		target.destroy()
-		pet_modifiers.apply_food_modifiers(player_index, entry, food_item)
-		pet_reactions.food_trigger(player_index, entry, food_item)
-		pet_state.set_feeding_target(player_index, nil)
-		pet_morph.evaluate_morph_state(player_index, pet, entry)
-		return true
+		return false
 	end
 
-	-- Otherwise path to the food.
+	local item_name = target.stack.name
+
+	target.destroy()
+
+	-- Halt pet movement before interaction for visual purposes.
 	pet.commandable.set_command {
-		type = defines.command.go_to_location,
-		destination = target.position,
-		radius = LC.EAT_RADIUS,
+		type = defines.command.stop,
 		distraction = defines.distraction.none
 	}
-	return false
+
+	pet_reactions.process_item_interaction(player_index, pet, entry, item_name)
+	return true
 end
 
 -- TODO: Randomize idle state between wandering, pausing and investigating for random intervals.
@@ -238,15 +243,11 @@ end
 
 local function evaluate_target(player_index, pet, target)
 	if not (target and target.valid) then
-		local hunger = pet_state.get_hunger(player_index)
-		local thirst = pet_state.get_thirst(player_index)
-		if hunger > LC.SEEK_FOOD_THRESHOLD or thirst > LC.SEEK_WATER_THRESHOLD then
-			local feeding_target = find_nearest_food(pet)
-			if feeding_target then
-				pet_state.set_feeding_target(player_index, feeding_target) -- Fixed variable
-				pet_state.set_behavior(player_index, "seek_food")
-				debug.render_path_to_target(player_index, pet, feeding_target)
-			end
+		local item_target = find_nearest_interactable_item(player_index, pet)
+		if item_target then
+			pet_state.set_item_target(player_index, item_target)
+			pet_state.set_behavior(player_index, "seek_item")
+			debug.render_path_to_target(player_index, pet, item_target)
 		end
 	end
 end
@@ -272,6 +273,11 @@ local function handle_pause(player_index, entry, pet)
 
 	-- Still paused; skip all behaviors.
 	if paused_now then
+		pet.commandable.set_command {
+			type = defines.command.stop,
+			distraction = defines.distraction.none
+		}
+
 		debug.info("Pet movement has paused.")
 		entry.was_paused = true
 		return true
@@ -305,21 +311,18 @@ local function biter_was_adopted(player, player_index, pet, entry)
 	end
 end
 
-local function state_seek_food(player_index, player, pet, entry)
-	local target = pet_state.get_feeding_target(player_index)
+local function state_seek_item(player_index, player, pet, entry)
+	local target = pet_state.get_item_target(player_index)
 	if not (target and target.valid) then
 		pet_state.set_behavior(player_index, "idle")
 		return
 	end
 
-	local pet_ate = handle_feeding_behavior(player_index, player, pet, entry)
+	local ate_food = handle_item_interaction(player_index, player, pet, entry)
 
-	if pet_ate then
+	if ate_food then
 		pet_state.pause(player_index, 60)
-
 		if biter_was_adopted(player, player_index, pet, entry) then return end
-		if not entry.is_orphaned then if pet_growth.try_grow(player_index, entry) then return end end
-		pet_state.set_behavior(player_index, "eat")
 		return
 	end
 end
@@ -412,6 +415,40 @@ local function state_attack(player_index, player, pet, entry)
 	}
 end
 
+local function state_return_item(player_index, player, pet, entry)
+	local item_name = pet_state.get_returnable_item(player_index)
+	if not item_name then
+		pet_state.set_behavior(player_index, "idle")
+		return
+	end
+
+	-- Don't return item if player is not in direct control of player character.
+	if player.controller_type ~= defines.controllers.character then return end
+
+	local distance_squared = position_util.distance_squared(pet.position, player.position)
+	local drop_position = position_util.get_forward_offset(player, 0.5)
+	if distance_squared <= LC.INTERACT_RADIUS_SQUARED then
+		player.surface.spill_item_stack {
+			position = drop_position,
+			stack = {
+				name = item_name,
+				count = 1
+			},
+			enabled_looted = true,
+			max_radius = 2
+		}
+		notifications.fetch_flavor_text(player, entry)
+		pet_state.set_behavior(player_index, "idle")
+		pet_state.pause(player_index, 60)
+	end
+
+	pet.commandable.set_command {
+		type = defines.command.go_to_location,
+		destination = drop_position,
+		distraction = defines.distraction.none
+	}
+end
+
 local function evaluate_tiredness(player_index, pet, entry)
 	if not (pet and pet.valid) then return end
 
@@ -438,6 +475,18 @@ local function evaluate_tiredness(player_index, pet, entry)
 	end
 end
 
+local function evaluate_returnable_item_state(player_index, player, pet)
+	local returnable = pet_state.get_returnable_item(player_index)
+	if not returnable then return end
+	local items = pet.surface.find_entities_filtered {
+		type = "item-entity",
+		position = player.position,
+		radius = LC.ITEM_SEARCH_RADIUS
+	}
+	for _, item in ipairs(items) do if item.stack.valid_for_read and item.stack.name == returnable then return end end
+	pet_state.set_returnable_item(player_index, nil)
+end
+
 local function process_pet(player_index, entry)
 	local player = game.get_player(player_index)
 	if not is_player_valid(player) then return end
@@ -455,8 +504,16 @@ local function process_pet(player_index, entry)
 	-- Enable debugging visualizers.
 	debug.visualize_behavioral_radii(player_index)
 
-	-- Combat branch.
 	local behavior = pet_state.get_behavior(player_index)
+
+	-- Return fetched item.
+	if behavior == "return_item" then
+		debug.trace(string.format("Took process branch %s", t.f("RETURN_ITEM", "f")))
+		return state_return_item(player_index, player, pet, entry)
+	end
+
+	evaluate_returnable_item_state(player_index, player, pet)
+	-- Combat branch.
 	if behavior == "flee" then
 		debug.trace(string.format("Took process branch %s", t.f("FLEE", "f")))
 		state_flee(player_index, player, pet, entry)
@@ -488,14 +545,17 @@ local function process_pet(player_index, entry)
 	evaluate_tiredness(player_index, pet, entry)
 
 	-- Feed and follow branch.
-	local target = pet_state.get_feeding_target(player_index)
-	evaluate_target(player_index, pet, target)
+	if behavior ~= "return_item" then
+		debug.trace(string.format("Took target evaluation branch %s", t.f("ATTACK", "f")))
+		local target = pet_state.get_item_target(player_index)
+		evaluate_target(player_index, pet, target)
+	end
 
 	-- State branching.
 	behavior = pet_state.get_behavior(player_index)
-	if behavior == "seek_food" then
-		debug.trace(string.format("Took process branch %s", t.f("SEEK_FOOD", "f")))
-		return state_seek_food(player_index, player, pet, entry)
+	if behavior == "seek_item" then
+		debug.trace(string.format("Took process branch %s", t.f("SEEK_ITEM", "f")))
+		return state_seek_item(player_index, player, pet, entry)
 	elseif behavior == "eat" then
 		debug.trace(string.format("Took process branch %s", t.f("EAT", "f")))
 		return state_eat(player_index, player, pet)
@@ -538,10 +598,7 @@ function pet_lifecycle.on_entity_died(event)
 
 			local player = game.get_player(player_index)
 			if player then
-				notifications.notify(player, pet, {
-					type = "entity",
-					name = BM[entry.biter_tier].base_equivalent
-				}, "Your faithful companion has died. Perhaps a new friend may appear one day.", "utility/achievement_unlocked")
+				notifications.notify(player, "Oh no...")
 			end
 			break
 		end

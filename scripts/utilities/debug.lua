@@ -223,11 +223,11 @@ function pet_debug.render_behavioral_radius(player_index, pet, radius, radius_ty
 		if entry.debug_follow_radius then entry.debug_follow_radius.destroy() end
 		render_circle(entry, pet, radius, DC.DEBUG_FOLLOW_RADIUS_COLOR)
 	elseif radius_type == "food_search" then
-		if entry.debug_food_search_radius then entry.debug_food_search_radius.destroy() end
-		render_circle(entry, pet, radius, DC.DEBUG_FOOD_SEARCH_RADIUS_COLOR)
+		if entry.debug_item_search_radius then entry.debug_item_search_radius.destroy() end
+		render_circle(entry, pet, radius, DC.DEBUG_ITEM_SEARCH_RADIUS_COLOR)
 	elseif radius_type == "eat" then
-		if entry.debug_eat_radius then entry.debug_eat_radius.destroy() end
-		render_circle(entry, pet, radius, DC.DEBUG_EAT_RADIUS_COLOR)
+		if entry.debug_interact_radius then entry.debug_interact_radius.destroy() end
+		render_circle(entry, pet, radius, DC.DEBUG_INTERACT_RADIUS_COLOR)
 	elseif radius_type == "attack" then
 		if entry.debug_attack_radius then entry.debug_attack_radius.destroy() end
 		render_circle(entry, pet, radius, DC.DEBUG_ATTACK_RADIUS_COLOR)
@@ -246,11 +246,11 @@ function pet_debug.visualize_behavioral_radii(player_index)
 	local follow_radius = LC.FOLLOW_RADIUS_BY_TIER[pet.name] or LC.PET_FOLLOW_RADIUS
 	pet_debug.render_behavioral_radius(player_index, pet, follow_radius, "follow")
 
-	local food_search_radius = LC.FOOD_SEARCH_RADIUS
-	pet_debug.render_behavioral_radius(player_index, pet, food_search_radius, "food_search")
+	local item_search_radius = LC.ITEM_SEARCH_RADIUS
+	pet_debug.render_behavioral_radius(player_index, pet, item_search_radius, "food_search")
 
-	local eat_radius = LC.EAT_RADIUS
-	pet_debug.render_behavioral_radius(player_index, pet, eat_radius, "eat")
+	local interact_radius = LC.INTERACT_RADIUS
+	pet_debug.render_behavioral_radius(player_index, pet, interact_radius, "eat")
 
 	local attack_radius = LC.PET_ATTACK_RADIUS
 	pet_debug.render_behavioral_radius(player_index, pet, attack_radius, "attack")

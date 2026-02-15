@@ -1,14 +1,62 @@
 local position = {}
 
+local DIRECTIONAL_OFFSETS = {
+	[defines.direction.north] = {
+		x = 0,
+		y = -1
+	},
+	[defines.direction.northeast] = {
+		x = 0.7,
+		y = -0.7
+	},
+	[defines.direction.east] = {
+		x = 1,
+		y = 0
+	},
+	[defines.direction.southeast] = {
+		x = 0.7,
+		y = 0.7
+	},
+	[defines.direction.south] = {
+		x = 0,
+		y = 1
+	},
+	[defines.direction.southwest] = {
+		x = -0.7,
+		y = 0.7
+	},
+	[defines.direction.west] = {
+		x = -1,
+		y = 0
+	},
+	[defines.direction.northwest] = {
+		x = -0.7,
+		y = -0.7
+	}
+}
+
+function position.get_forward_offset(player, distance)
+	if not (player and player.valid) then return nil end
+
+	local direction = player.character.direction
+	local offset = DIRECTIONAL_OFFSETS[direction]
+
+	if not offset then return player.position end
+
+	return {
+		x = player.position.x + offset.x * distance,
+		y = player.position.y + offset.y * distance
+	}
+end
 
 function position.direction_from_orientation(orientation)
-    return math.floor(orientation * 16 + 0.5) % 16
+	return math.floor(orientation * 16 + 0.5) % 16
 end
 
 function position.pick_idle_target(pet_position, tether, radius)
 	for i = 1, 20 do
 
-		local angle = math.random() * math.pi * 2		
+		local angle = math.random() * math.pi * 2
 		local distance = radius * (0.5 + math.random() * 0.5)
 
 		local candidate = {
@@ -43,37 +91,27 @@ function position.distance_squared(position_a, position_b)
 end
 
 function position.get_direction_of_position(origin, destination)
-    local distance_x = destination.x - origin.x
-    local distance_y = destination.y - origin.y
+	local distance_x = destination.x - origin.x
+	local distance_y = destination.y - origin.y
 
-    local axis_x = math.abs(distance_x)
-    local axis_y = math.abs(distance_y)
+	local axis_x = math.abs(distance_x)
+	local axis_y = math.abs(distance_y)
 
 	-- Nest spawned too close to player so notification is unncessary.
-    if axis_x < 10 and axis_y < 10 then
-        return false
-    end
+	if axis_x < 10 and axis_y < 10 then return false end
 
-    local vertical =
-        (distance_y < -1 and "north") or
-        (distance_y > 1 and "south") or
-        nil
+	local vertical = (distance_y < -1 and "north") or (distance_y > 1 and "south") or nil
 
-    local horizontal =
-        (distance_x > 1 and "east") or
-        (distance_x < -1 and "west") or
-        nil
+	local horizontal = (distance_x > 1 and "east") or (distance_x < -1 and "west") or nil
 
-    if vertical and horizontal then
-        local dominant = math.max(axis_x, axis_y)
-        local minor = math.min(axis_x, axis_y)
+	if vertical and horizontal then
+		local dominant = math.max(axis_x, axis_y)
+		local minor = math.min(axis_x, axis_y)
 
-        if dominant / minor >= 1.5 then
-            return (axis_y > axis_x) and vertical or horizontal
-        end
-        return vertical .. horizontal
-    end
-    return vertical or horizontal
+		if dominant / minor >= 1.5 then return (axis_y > axis_x) and vertical or horizontal end
+		return vertical .. horizontal
+	end
+	return vertical or horizontal
 end
 
 return position

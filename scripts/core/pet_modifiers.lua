@@ -5,7 +5,7 @@ local t = require("scripts.utilities.text_format")
 
 local MOOD_BONUS_SCALER = require("scripts.constants.modifiers").MOOD_BONUS_SCALER
 
-local FM = require("scripts.constants.modifiers").FOOD_MODIFIERS
+local ID = require("scripts.constants.reactions").ITEM_DEFINITIONS
 local CM = require("scripts.constants.modifiers").COMBAT_MODIFIERS
 local BM = require("scripts.constants.modifiers").BEHAVIORAL_MODIFIERS
 
@@ -67,10 +67,9 @@ function pet_modifiers.apply_friendly_fire_modifiers(player_index, entry, key)
 	batch_modify_state(player_index, modifiers)
 end
 
-function pet_modifiers.apply_food_modifiers(player_index, entry, food)
+function pet_modifiers.apply_modifiers(player_index, entry, modifiers)
 	if DC.DEBUG_SHOW_NEEDS_UPDATES then debug.trace(string.format("Applying modifiers for eating %s", food)) end
 
-	local modifiers = FM[food]
 	if not modifiers then
 		debug.warn(string.format("Food modifier table missing entry for %s", t.f(food, "w")))
 		return

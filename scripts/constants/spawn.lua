@@ -18,7 +18,8 @@ local STATE_DEFAULTS = {
 	thirst = 0,
 	tiredness = 50,
 	feeding_target = nil,
-	attack_target = nil
+	attack_target = nil,
+	item_interaction = nil
 
 }
 

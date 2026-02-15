@@ -33,7 +33,8 @@ local function ensure_state(player_index)
 			tiredness = SD.tiredness,
 			current_form = SD.current_form,
 			feeding_target = SD.feeding_target,
-			attack_target = SD.attack_target
+			attack_target = SD.attack_target,
+			item_interaction = SD.item_interaction
 		}
 		storage.pet_state[player_index] = state
 	else
@@ -47,6 +48,7 @@ local function ensure_state(player_index)
 		state.tiredness = state.tiredness or SD.tiredness
 		state.feeding_target = state.feeding_target or SD.feeding_target
 		state.attack_target = state.attack_target or SD.attack_target
+		state.item_interaction = state.item_interaction or SD.item_interaction
 	end
 
 	return state
@@ -108,8 +110,8 @@ local function start_next_forced_emote(player_index, entry, fast_render)
 	local emote_state = ensure_queue(player_index)
 	local next_emote = table.remove(emote_state.forced_queue, 1)
 	if not next_emote then return end
-
-	local sprite_render = pet_visuals.emote(player_index, entry, next_emote, fast_render)
+	local behavior = pet_state.get_behavior(player_index)
+	local sprite_render = pet_visuals.emote(player_index, entry, next_emote, fast_render, behavior)
 	emote_state.sprite_render = sprite_render
 	emote_state.active_emote = next_emote
 	emote_state.active_type = "forced"
@@ -184,8 +186,8 @@ local function tick_emotes(player_index, entry)
 	local next_emote = emote_state.queue[1]
 	if next_emote then
 		table.remove(emote_state.queue, 1)
-
-		local sprite_render = pet_visuals.emote(player_index, entry, next_emote)
+		local behavior = pet_state.get_behavior(player_index)
+		local sprite_render = pet_visuals.emote(player_index, entry, next_emote, false, behavior)
 		emote_state.sprite_render = sprite_render
 		emote_state.active_emote = next_emote
 		emote_state.ends_at_tick = now + (RS.EMOTE_DURATION or 180)
@@ -404,12 +406,33 @@ function pet_state.add_hunger(player_index, delta)
 	state.hunger = new_hunger
 end
 
-function pet_state.set_feeding_target(player_index, entity)
+-- Item interaction.
+function pet_state.set_returnable_item(player_index, item_name)
+	local state = ensure_state(player_index)
+	state.returnable_item = item_name
+end
+
+function pet_state.get_returnable_item(player_index)
+	local state = ensure_state(player_index)
+	return state.returnable_item
+end
+
+function pet_state.get_item_interaction(player_index)
+	local state = ensure_state(player_index)
+	return state.item_interaction
+end
+
+function pet_state.set_item_interaction(player_index, value)
+	local state = ensure_state(player_index)
+	state.item_interaction = value
+end
+
+function pet_state.set_item_target(player_index, entity)
 	local state = ensure_state(player_index)
 	state.feeding_target = entity or nil
 end
 
-function pet_state.get_feeding_target(player_index)
+function pet_state.get_item_target(player_index)
 	local state = ensure_state(player_index)
 	return state.feeding_target
 end

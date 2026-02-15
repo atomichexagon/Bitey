@@ -15,25 +15,25 @@ return {
 	DEBUG_FOLLOW_RADIUS_COLOR = {
 		r = 0,
 		g = 0,
-		b = 1,
-		a = 0.1
+		b = 255,
+		a = 255
 	},
-	DEBUG_FOOD_SEARCH_RADIUS_COLOR = {
+	DEBUG_ITEM_SEARCH_RADIUS_COLOR = {
 		r = 0,
-		g = 1,
+		g = 255,
 		b = 0,
-		a = 0.1
+		a = 255
 	},
-	DEBUG_EAT_RADIUS_COLOR = {
-		r = 1,
-		g = 1,
+	DEBUG_INTERACT_RADIUS_COLOR = {
+		r = 255,
+		g = 255,
 		b = 0,
-		a = 0.1
+		a = 255
 	},
 	DEBUG_ATTACK_RADIUS_COLOR = {
-		r = 1,
+		r = 255,
 		g = 0,
 		b = 0,
-		a = 0.1
+		a = 255
 	}
 }
