@@ -175,7 +175,14 @@ local function handle_item_interaction(player_index, player, pet, entry)
 	return true
 end
 
-local function finish_investigation(player_index, pet, entry)
+local function notify_player_of_investigation_if_in_proximity(player, pet, item_name)
+	local distance_squared = position_util.distance_squared(player.position, pet.position)
+	if distance_squared <= LC.INVESTIGATION_RADIUS_SQUARED then
+		notifications.investigation_flavor_text(player, item_name)
+	end
+end
+
+local function finish_investigation(player_index, player, pet, entry)
 	local state = pet_state.get_state(player_index)
 
 	if state.boredom >= 90 then
@@ -186,15 +193,21 @@ local function finish_investigation(player_index, pet, entry)
 		end
 	end
 
+	local item_name = entry.investigation_target.name
+	notify_player_of_investigation_if_in_proximity(player, pet, item_name)
+
+	local entity_emote = "item/" .. entry.investigation_target.name
 	local emotes = LC.INVESTIGATION_EMOTES
+	pet_state.force_emote(player_index, entry, entity_emote, true)
 	pet_state.force_emote(player_index, entry, emotes[math.random(#emotes)])
+
 	pet_state.pause(player_index, 120)
 	entry.investigateing = false
 	entry.investigation_target = nil
 	pet_state.clear_idle_target(player_index)
 end
 
-local function state_investigation(player_index, pet, entry)
+local function state_investigation(player_index, player, pet, entry)
 	local target = entry.investigation_target
 
 	if not (target and target.valid) then
@@ -203,21 +216,32 @@ local function state_investigation(player_index, pet, entry)
 		return
 	end
 
-	if position_util.distance_squared(pet.position, target.position) < LC.INTERACT_RADIUS_SQUARED then
-		finish_investigation(player_index, pet, entry)
+	local destination = position_util.get_offset_position(pet, target)
+
+	if position_util.distance_squared(pet.position, destination) < LC.INTERACT_RADIUS_SQUARED then
+		finish_investigation(player_index, player, pet, entry)
 		return
 	end
 
-	-- TODO: Get offset vector so pet doesn't path into entity.
 	pet.commandable.set_command {
 		type = defines.command.go_to_location,
-		destination = target.position,
+		destination = destination,
+		radius = 0.5,
 		distraction = defines.distraction.none,
 		pathfind_flags = {
-			allow_paths_through_own_entities = true
+			allow_paths_through_own_entities = true,
+			prefer_straight_paths = true
 		}
 	}
 
+end
+
+local function orient_towards_investigation_target(pet, target)
+	local distance_x = target.position.x - pet.position.x
+	local distance_y = target.position.y - pet.position.y
+	local angle = math.atan2(distance_y, distance_x)
+	local orientation = (angle / (2 * math.pi) + 0.25) % 1
+	pet.orientation = orientation
 end
 
 local function try_starting_investigation(player_index, player, pet, entry)
@@ -235,18 +259,21 @@ local function try_starting_investigation(player_index, player, pet, entry)
 	entry.investigating = true
 	entry.investigation_target = target
 
+	pet.commandable.set_command {
+		type = defines.command.stop,
+		distraction = defines.distraction.none
+	}
+	orient_towards_investigation_target(pet, target)
 	pet_state.pause(player_index, 60)
 	pet_state.force_emote(player_index, entry, "investigate")
 	return true
 end
 
--- TODO: Randomize idle state between wandering, pausing and investigating for random intervals.
--- TODO: Ignore follow radius when behavior is investigate.
 local function state_idle(player_index, player, pet, entry)
 	if not (pet and pet.valid) then return end
 
 	if entry.investigating then
-		state_investigation(player_index, pet, entry)
+		state_investigation(player_index, player, pet, entry)
 		return
 	end
 
@@ -257,10 +284,10 @@ local function state_idle(player_index, player, pet, entry)
 
 	local radius = LC.FOLLOW_RADIUS_BY_TIER[pet.name] or LC.PET_FOLLOW_RADIUS
 	local tether = entry.is_orphaned and (storage.pet_spawn_point or pet.position) or player.position
-	local distance_square_to_tether = position_util.distance_squared(pet.position, tether)
+	local distance_squared_to_tether = position_util.distance_squared(pet.position, tether)
 
 	-- Revert back to following if beyond extended idle radius.
-	if distance_square_to_tether > (radius * radius * LC.IDLE_RADIUS_MULTIPLIER) then
+	if distance_squared_to_tether > (radius * radius * LC.IDLE_RADIUS_MULTIPLIER) then
 		pet_state.set_behavior(player_index, "follow")
 		return
 	end

@@ -9,8 +9,8 @@ local BITER_DREAMS = {
 		"scared"
 	},
 	rare = {
-		"sulfuric_acid",
-		"uranium_235",
+		"sulfuric-acid",
+		"uranium-235",
 		"stone"
 	},
 	hunger = "hungry",

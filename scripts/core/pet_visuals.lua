@@ -2,10 +2,24 @@ local debug = require("scripts.utilities.debug")
 local pet_audio = require("scripts.core.pet_audio")
 local util = require("util")
 
+local t = require("scripts.utilities.text_format")
 local RS = require("scripts.constants.visuals").RENDER_SETTINGS
 local SM = require("scripts.constants.sprites").SPRITE_MAP
 
 local pet_visuals = {}
+
+local function try_draw_sprite(sprite, target, pet)
+	return pcall(function()
+		return rendering.draw_sprite {
+			sprite = sprite,
+			target = target,
+			surface = pet.surface,
+			x_scale = RS.EMOTE_SCALE,
+			y_scale = RS.EMOTE_SCALE,
+			time_to_live = RS.TIME_TO_LIVE_FALLBACK
+		}
+	end)
+end
 
 local function show_pet_reaction(player_index, entry, sprite, fast_render)
 	local fast_render = fast_render or false
@@ -25,14 +39,11 @@ local function show_pet_reaction(player_index, entry, sprite, fast_render)
 	local debug_descriptor = (fast_render and "Fast render") or "Standard render"
 	debug.trace(string.format("%s queued for sprite [img=%s].", debug_descriptor, sprite))
 
-	local sprite_id = rendering.draw_sprite {
-		sprite = sprite,
-		target = target,
-		surface = pet.surface,
-		x_scale = RS.EMOTE_SCALE,
-		y_scale = RS.EMOTE_SCALE,
-		time_to_live = RS.TIME_TO_LIVE_FALLBACK
-	}
+	local successful, sprite_id = try_draw_sprite(sprite, target, pet)
+	if not successful then
+		debug.error("Invalid sprite name " .. sprite)
+		return
+	end
 
 	local color = (entry.current_form == "sleeping" and RS.EMOTE_SLEEPING_LIGHT_COLOR) or RS.EMOTE_WAKING_LIGHT_COLOR
 	local light_id = rendering.draw_light {
@@ -70,6 +81,7 @@ end
 function pet_visuals.emote(player_index, entry, emote, fast_render)
 	local pet = entry.unit
 	local data = SM[emote]
+
 	local sprite = (data and data.sprite) or emote
 
 	local sprite_render = show_pet_reaction(player_index, entry, sprite, fast_render)

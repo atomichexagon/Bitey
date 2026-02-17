@@ -1,166 +1,166 @@
 -- TODO: Organize and validate all of this shit.
 local SPRITE_MAP = {
 	-- General emotes.
-	alert = {
+	["alert"] = {
 		sprite = "virtual-signal/signal-alert"
 	},
-	home = {
+	["home"] = {
 		sprite = "entity/biter-spawner"
 	},
-	investigate = {
+	["investigate"] = {
 		sprite = "investigate"
 	},
-	sleeping = {
+	["sleeping"] = {
 		sprite = "sleeping"
 	},
-	tired = {
+	["tired"] = {
 		sprite = "virtual-signal/signal-battery-low"
 	},
-	animated = {
+	["animated"] = {
 		sprite = "virtual-signal/signal-battery-mid-level"
 	},
-	energized = {
+	["energized"] = {
 		sprite = "virtual-signal/signal-battery-full"
 	},
-	work = {
+	["work"] = {
 		sprite = "virtual-signal/signal-mining"
 	},
 	-- Combat emotes.
-	attack = {
+	["attack"] = {
 		sprite = "item/submachine-gun"
 	},
-	biter = {
+	["biter"] = {
 		sprite = "entity/medium-biter"
 	},
-	defend = {
+	["defend"] = {
 		sprite = "entity/character"
 	},
-	fire = {
+	["fire"] = {
 		sprite = "virtual-signal/signal-fire"
 	},
-	patrol = {
+	["patrol"] = {
 		sprite = "virtual-signal/signal-white-flag"
 	},
-	scared = {
+	["scared"] = {
 		sprite = "scared"
 	},
-	spitter = {
+	["spitter"] = {
 		sprite = "entity/medium-spitter"
 	},
-	stay = {
+	["stay"] = {
 		sprite = "virtual-signal/signal-map-marker"
 	},
-	stone = {
+	["stone"] = {
 		sprite = "item/stone"
 	},
-	sulfuric_acid = {
+	["sulfuric-acid"] = {
 		sprite = "item/sulfuric-acid-barrel"
 	},
 	-- Feeding emotes.
-	hungry = {
+	["hungry"] = {
 		sprite = "item/raw-fish"
 	},
-	horrified = {
+	["horrified"] = {
 		sprite = "horrified"
 	},
-	evolve = {
+	["evolve"] = {
 		sprite = "virtual-signal/signal-radioactivity"
 	},
-	sick = {
+	["sick"] = {
 		sprite = "sick"
 	},
-	thirsty = {
+	["thirsty"] = {
 		sprite = "fluid/water"
 	},
-	cringe = {
+	["cringe"] = {
 		sprite = "cringe"
 	},
 	-- Boredom emotes.
-	bored = {
+	["bored"] = {
 		sprite = "bored"
 	},
-	confused = {
+	["confused"] = {
 		sprite = "confused"
 	},
-	mischievous = {
+	["mischievous"] = {
 		sprite = "silly"
 	},
-	play = {
+	["play"] = {
 		sprite = "item/wood"
 	},
-	playing_dead = {
+	["playing-dead"] = {
 		sprite = "playing-dead"
 	},
 	-- Happiness emotes.
-	ecstatic = {
+	["ecstatic"] = {
 		sprite = "ecstatic"
 	},
-	very_happy = {
+	["very-happy"] = {
 		sprite = "very-happy"
 	},
-	happy = {
+	["happy"] = {
 		sprite = "happy"
 	},
-	sad = {
+	["sad"] = {
 		sprite = "sad"
 	},
-	very_sad = {
+	["very-sad"] = {
 		sprite = "very-sad"
 	},
 	-- Friendship emotes.
-	angry = {
+	["angry"] = {
 		sprite = "angry"
 	},
-	gift = {
+	["gift"] = {
 		sprite = "gift"
 	},
-	hurt = {
+	["hurt"] = {
 		sprite = "entity/behemoth-biter-die"
 	},
-	love = {
+	["love"] = {
 		sprite = "virtual-signal/signal-heart"
 	},
 	-- Food emotes.
-	uranium_238 = {
+	["uranium-238"] = {
 		sprite = "item/uranium-238"
 	},
-	uranium_235 = {
+	["uranium-235"] = {
 		sprite = "item/uranium-235"
 	},
-	spoilage = {
+	["spoilage"] = {
 		sprite = "item/spoilage"
 	},
-	pentapod_egg = {
+	["pentapod-egg"] = {
 		sprite = "item/pentapod-egg"
 	},
-	biter_egg = {
+	["biter-egg"] = {
 		sprite = "item/biter-egg"
 	},
-	yumako_seed = {
+	["yumako-seed"] = {
 		sprite = "item/yumako-seed"
 	},
-	jellynut_seed = {
+	["jellynut-seed"] = {
 		sprite = "item/jellynut-seed"
 	},
-	yumako = {
+	["yumako"] = {
 		sprite = "item/yumako"
 	},
-	jellynut = {
+	["jellynut"] = {
 		sprite = "item/jellynut"
 	},
-	nutrients = {
+	["nutrient"] = {
 		sprite = "item/nutrients"
 	},
-	bioflux = {
+	["bioflux"] = {
 		sprite = "item/bioflux"
 	},
-	yumako_mash = {
+	["yumako-mash"] = {
 		sprite = "item/yumako-mash"
 	},
-	jelly = {
+	["jelly"] = {
 		sprite = "item/jelly"
 	},
-	tree_seed = {
+	["tree-seed"] = {
 		sprite = "item/tree-seed"
 	}
 }

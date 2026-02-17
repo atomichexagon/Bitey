@@ -6,7 +6,7 @@ local SPAWN_SETTINGS = {
 	maximum_spawn_offset = 150, -- Default: 150
 
 	ticks_per_day = 25200, -- Default: 25200
-	ticks_per_year = 3600 -- Default: 9198000
+	ticks_per_year = 9198000 -- Default: 9198000
 }
 
 local STATE_DEFAULTS = {

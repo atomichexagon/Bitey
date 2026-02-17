@@ -135,7 +135,7 @@ local ITEM_DEFINITIONS = {
 	["uranium-238"] = {
 		emotes = {
 			{
-				name = "uranium_238",
+				name = "uranium-238",
 				fast_render = true
 			},
 			{
@@ -161,7 +161,7 @@ local ITEM_DEFINITIONS = {
 	["uranium-235"] = {
 		emotes = {
 			{
-				name = "uranium_235",
+				name = "uranium-235",
 				fast_render = true
 			},
 			{
@@ -213,7 +213,7 @@ local ITEM_DEFINITIONS = {
 	["pentapod-egg"] = {
 		emotes = {
 			{
-				name = "pentapod_egg",
+				name = "pentapod-egg",
 				fast_render = true
 			},
 			{
@@ -236,7 +236,7 @@ local ITEM_DEFINITIONS = {
 	["biter-egg"] = {
 		emotes = {
 			{
-				name = "biter_egg",
+				name = "biter-egg",
 				fast_render = true
 			},
 			{
@@ -366,7 +366,7 @@ local ITEM_DEFINITIONS = {
 	["nutrients"] = {
 		emotes = {
 			{
-				name = "very_happy",
+				name = "very-happy",
 				fast_render = true
 			},
 			{
@@ -415,7 +415,7 @@ local ITEM_DEFINITIONS = {
 	["yumako-mash"] = {
 		emotes = {
 			{
-				name = "yumako_mash",
+				name = "yumako-mash",
 				fast_render = true
 			},
 			{
@@ -441,7 +441,7 @@ local ITEM_DEFINITIONS = {
 	["jelly"] = {
 		emotes = {
 			{
-				name = "yumako_mash",
+				name = "yumako-mash",
 				fast_render = true
 			},
 			{
@@ -500,7 +500,7 @@ local COMBAT_REACTIONS = {
 				fast_render = true
 			},
 			{
-				name = "very_sad",
+				name = "very-sad",
 				fast_render = false
 			}
 		}

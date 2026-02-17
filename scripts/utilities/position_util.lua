@@ -35,6 +35,50 @@ local DIRECTIONAL_OFFSETS = {
 	}
 }
 
+function position.distance(position_a, position_b)
+	local distance_x = position_a.x - position_b.x
+	local distance_y = position_a.y - position_b.y
+	return math.sqrt(distance_x * distance_x + distance_y * distance_y)
+end
+
+function position.distance_squared(position_a, position_b)
+	local distance_x = position_a.x - position_b.x
+	local distance_y = position_a.y - position_b.y
+	return distance_x * distance_x + distance_y * distance_y
+end
+
+local function get_entity_radius(entity)
+	local box = entity.prototype.collision_box
+	local width = box.right_bottom.x - box.left_top.x
+	local height = box.right_bottom.y - box.left_top.y
+	return math.max(width, height) * 0.5
+end
+
+function position.get_offset_position(origin, target)
+	local radius = get_entity_radius(target)
+	local origin_position = origin.position
+	local target_position = target.position
+
+	local distance_x = origin_position.x - target_position.x
+	local distance_y = origin_position.y - target_position.y
+	local distance = position.distance(origin_position, target_position)
+
+	if distance == 0 then
+		return {
+			x = target_position.x + radius + 1,
+			y = target_position.y
+		}
+	end
+
+	distance_x = distance_x / distance
+	distance_y = distance_y / distance
+
+	return {
+		x = target_position.x + distance_x * (radius + 0.5),
+		y = target_position.y + distance_y * (radius + 0.5)
+	}
+end
+
 function position.get_forward_offset(player, distance)
 	if not (player and player.valid) then return nil end
 
@@ -76,18 +120,6 @@ function position.randomly_offset(pos, distance)
 		x = pos.x + math.cos(angle) * distance,
 		y = pos.y + math.sin(angle) * distance
 	}
-end
-
-function position.distance(position_a, position_b)
-	local distance_x = position_a.x - position_b.x
-	local distance_y = position_a.y - position_b.y
-	return math.sqrt(distance_x * distance_x + distance_y * distance_y)
-end
-
-function position.distance_squared(position_a, position_b)
-	local distance_x = position_a.x - position_b.x
-	local distance_y = position_a.y - position_b.y
-	return distance_x * distance_x + distance_y * distance_y
 end
 
 function position.get_direction_of_position(origin, destination)

@@ -1,15 +1,15 @@
 return {
 	-- Attacking.
-	PET_ATTACK_RADIUS = 5.0,
+	PET_ATTACK_RADIUS = 5.0, -- Default: 5.0
 
 	-- Fleeing.
-	PET_SAFE_THRESHOLD = 0.75, -- Pet will stop fleeing when percentage of health is above this threshold.
-	PET_FLEE_THRESHOLD = 0.50, -- Pet will flee when percentage of health is below this value.
-	PET_FLEE_SAFE_DISTANCE = 50, -- Distance in tiles pet will flee from danger.
-	PET_FLEE_HAPPINESS_PENALTY = -5,
-	PET_FLEE_HUNGER_PENALTY = 8,
-	PET_FLEE_THIRST_PENALTY = 15,
-	PET_FLEE_BOREDOM_PENALTY = -15,
+	PET_SAFE_THRESHOLD = 0.80, -- Default: 0.80
+	PET_FLEE_THRESHOLD = 0.50, -- Default: 0.50
+	PET_FLEE_SAFE_DISTANCE = 50, -- Default: 50
+	PET_FLEE_HAPPINESS_PENALTY = -5, -- Default: -5
+	PET_FLEE_HUNGER_PENALTY = 8, -- Default: 8
+	PET_FLEE_THIRST_PENALTY = 15, -- Default: 15
+	PET_FLEE_BOREDOM_PENALTY = -15, -- Default: -15
 
 	-- Following.
 	PET_FOLLOW_RADIUS = 6.0,
@@ -59,8 +59,9 @@ return {
 	INTERACT_RADIUS_SQUARED = 1.5 * 1.5,
 	DECONSTRUCTION_RADIUS = 25,
 	DECONSTRUCTION_RADIUS_SQUARED = 25 * 25,
-	INVESTIGATION_CHANCE = 0.1,
+	INVESTIGATION_CHANCE = 0.001, -- Default: 0.001
 	INVESTIGATION_RADIUS = 20,
+	INVESTIGATION_RADIUS_SQUARED = 20 * 20,
 	INVESTIGATION_TARGETS = {
 		"accumulator",
 		"agricultural-tower",
@@ -75,6 +76,7 @@ return {
 		"electric-turret",
 		"furnace",
 		"generator",
+		"mining-drill",
 		"pipe-to-ground",
 		"pump",
 		"radar",

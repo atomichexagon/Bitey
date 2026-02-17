@@ -1,6 +1,7 @@
 -- Use /bpmoods to switch to high-frequency debug intervals.
 local NEED_INTERVALS = {
 
+	-- TODO: Finalize these interval values.
 	-- State tick intervals for physiological needs (ticks per second) * (seconds).
 	active = {
 		mood = 60 * 25,

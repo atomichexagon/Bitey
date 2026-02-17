@@ -44,7 +44,7 @@ local BEHAVIORAL_MODIFIERS = {
 		thirst = 5,
 		tiredness = 1
 	},
-	["playing_dead"] = {
+	["playing-dead"] = {
 		boredom = -5,
 		evolution = 0,
 		friendship = 2,
@@ -58,7 +58,6 @@ local BEHAVIORAL_MODIFIERS = {
 
 return {
 	MOOD_BONUS_SCALER = MOOD_BONUS_SCALER,
---	FOOD_MODIFIERS = FOOD_MODIFIERS,
 	COMBAT_MODIFIERS = COMBAT_MODIFIERS,
 	BEHAVIORAL_MODIFIERS = BEHAVIORAL_MODIFIERS
 }

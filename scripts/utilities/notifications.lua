@@ -1,6 +1,8 @@
 local debug = require("scripts.utilities.debug")
 local pet_state = require("scripts.core.pet_state")
 
+local ITG = require("scripts.constants.notifications").INVESTIGATION_FLAVOR_TEXT_GENERAL
+local ITS = require("scripts.constants.notifications").INVESTIGATION_FLAVOR_TEXT_SPECIFIC
 local FT = require("scripts.constants.notifications").FETCH_FLAVOR_TEXT
 
 local notifications = {}
@@ -38,6 +40,23 @@ function notifications.notify(player, message, sound)
 			time_to_live = 300
 		}
 	end
+end
+
+local function humanize_item_name(item_name)
+	if not item_name then return "machine" end
+	return (item_name:gsub("-", " "))
+end
+
+function notifications.investigation_flavor_text(player, item_name)
+	if math.random() < 0.5 or not item_name then
+		local message = ITG[math.random(#ITG)]
+		notifications.notify(player, message)
+		return		
+	end
+	local formatted_item_name = humanize_item_name(item_name)
+	local template = ITS[math.random(#ITS)]
+	local message = string.format(template, formatted_item_name)
+	notifications.notify(player, message)
 end
 
 function notifications.fetch_flavor_text(player_index, player, entry, item_name)

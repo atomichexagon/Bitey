@@ -108,10 +108,10 @@ function pet_behavior.on_pet_damaged(player_index, entry, event)
 		pet_state.switch_to_enemy_force(player_index, entry)
 	elseif state.friendship < BT.friendship_mild_betrayal then
 		pet_modifiers.apply_friendly_fire_modifiers(player_index, entry, "mild_betrayal")
-		pet_state.force_emote(player_index, entry, "very_sad")
+		pet_state.force_emote(player_index, entry, "very-sad")
 	elseif state.friendship >= BT.friendship_playing_dead and is_full_health and damage_insignificant then
-		pet_modifiers.apply_friendly_fire_modifiers(player_index, entry, "playing_dead")
-		pet_state.force_emote(player_index, entry, "playing_dead")
+		pet_modifiers.apply_friendly_fire_modifiers(player_index, entry, "playing-dead")
+		pet_state.force_emote(player_index, entry, "playing-dead")
 		pet_state.force_emote(player_index, entry, "silly")
 	else
 		pet_modifiers.apply_friendly_fire_modifiers(player_index, entry, "betrayal")
