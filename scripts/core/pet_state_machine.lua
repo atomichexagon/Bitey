@@ -10,6 +10,28 @@ local LC = require("scripts.constants.lifecycle")
 
 local pet_state_machine = {}
 
+function pet_state_machine.reapply_glow(entry)
+	if not (entry.unit and entry.unit.valid) then return end
+	if not entry.active_glow then return end
+	if (entry.active_glow.expire_tick - game.tick) <= 60 then return end
+
+	if entry.glow_id then
+		entry.glow_id.destroy()
+		entry.glow_id = nil
+	end
+
+	local glow_id = rendering.draw_light {
+		sprite = "utility/light_medium",
+		target = entry.unit,
+		surface = entry.unit.surface,
+		color = entry.active_glow.color,
+		intensity = entry.active_glow.intensity,
+		scale = entry.active_glow.scale,
+		minimum_darkness = entry.active_glow.minimum_darkness,
+		time_to_live = entry.active_glow.expire_tick - game.tick
+	}
+end
+
 function pet_state_machine.enter_idle(player_index, pet, entry, destination)
 	if entry.current_form == "idle" then return end
 	if not (pet and pet.valid) then return end
@@ -40,6 +62,7 @@ function pet_state_machine.enter_idle(player_index, pet, entry, destination)
 
 	entry.unit = idler
 	entry.current_form = "idle"
+	pet_state_machine.reapply_glow(entry)
 end
 
 function pet_state_machine.enter_active(player_index, entry)
@@ -69,6 +92,7 @@ function pet_state_machine.enter_active(player_index, entry)
 
 	entry.unit = active
 	entry.current_form = "active"
+	pet_state_machine.reapply_glow(entry)
 end
 
 local function get_sleep_animation_name(orientation, species)
@@ -118,7 +142,7 @@ function pet_state_machine.enter_sleep(player_index, entry)
 
 	entry.unit = sleeper
 	entry.current_form = "sleeping"
-
+	pet_state_machine.reapply_glow(entry)
 	pet_state.force_emote(player_index, entry, "sleeping", false)
 end
 

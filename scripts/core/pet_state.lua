@@ -2,6 +2,8 @@ local debug = require("scripts.utilities.debug")
 local pet_visuals = require("scripts.core.pet_visuals")
 local t = require("scripts.utilities.text_format")
 
+local GUARDING_MULTIPLIER = require("scripts.constants.modifiers").GUARDING_INTERVAL_MULTIPLIER
+
 local TF = require("scripts.constants.text_format")
 local DC = require("scripts.constants.debug")
 local SD = require("scripts.constants.spawn").STATE_DEFAULTS
@@ -301,6 +303,10 @@ local function apply_penalty_if_threshold(player_index, need_name, value, thresh
 	end
 end
 
+local function get_adjusted_interval(entry, interval)
+	return (entry.guard_position and interval * GUARDING_MULTIPLIER) or interval
+end
+
 function pet_state.tick_pet_state(player_index, entry)
 	local state = ensure_state(player_index)
 	local now = game.tick
@@ -312,34 +318,38 @@ function pet_state.tick_pet_state(player_index, entry)
 	local debug_int = NI.debug
 	local mood_function = (current_form == "sleeping") and calculate_dreams or calculate_mood
 
-	state.next_hunger_tick = state.next_hunger_tick or now + intervals.hunger
+	local hunger_interval = get_adjusted_interval(entry, intervals.hunger)
+	state.next_hunger_tick = state.next_hunger_tick or now + hunger_interval
 	if now >= state.next_hunger_tick then
 		pet_state.add_hunger(player_index, increments.hunger)
-		local next_hunger_interval = debug.mood_debugging_enabled and debug_int.hunger or intervals.hunger
+		local next_hunger_interval = debug.mood_debugging_enabled and debug_int.hunger or hunger_interval
 		state.next_hunger_tick = now + next_hunger_interval
 		apply_penalty_if_threshold(player_index, "hunger", state.hunger, MT.starving, penalties.hunger)
 	end
 
-	state.next_thirst_tick = state.next_thirst_tick or now + intervals.thirst
+	local thirst_interval = get_adjusted_interval(entry, intervals.hunger)
+	state.next_thirst_tick = state.next_thirst_tick or now + thirst_interval
 	if now >= state.next_thirst_tick then
 		if state.has_fluid_handling then pet_state.add_thirst(player_index, increments.thirst) end
-		local next_thirst_interval = debug.mood_debugging_enabled and debug_int.thirst or intervals.thirst
+		local next_thirst_interval = debug.mood_debugging_enabled and debug_int.thirst or thirst_interval
 		state.next_thirst_tick = now + next_thirst_interval
 		apply_penalty_if_threshold(player_index, "thirst", state.thirst, MT.dehydrated, penalties.thirst)
 	end
 
-	state.next_boredom_tick = state.next_boredom_tick or now + intervals.boredom
+	local boredom_interval = get_adjusted_interval(entry, intervals.boredom)
+	state.next_boredom_tick = state.next_boredom_tick or now + boredom_interval
 	if now >= state.next_boredom_tick then
 		pet_state.add_boredom(player_index, increments.boredom)
-		local next_boredom_interval = debug.mood_debugging_enabled and debug_int.boredom or intervals.boredom
+		local next_boredom_interval = debug.mood_debugging_enabled and debug_int.boredom or boredom_interval
 		state.next_boredom_tick = now + next_boredom_interval
 		apply_penalty_if_threshold(player_index, "boredom", state.boredom, MT.frustrated, penalties.boredom)
 	end
 
-	state.next_tiredness_tick = state.next_tiredness_tick or now + intervals.tiredness
+	local tiredness_interval = get_adjusted_interval(entry, intervals.tiredness)
+	state.next_tiredness_tick = state.next_tiredness_tick or now + tiredness_interval
 	if now >= state.next_tiredness_tick then
 		pet_state.add_tiredness(player_index, increments.tiredness)
-		local next_tiredness_interval = debug.mood_debugging_enabled and debug_int.tiredness or intervals.tiredness
+		local next_tiredness_interval = debug.mood_debugging_enabled and debug_int.tiredness or tiredness_interval
 		state.next_tiredness_tick = now + next_tiredness_interval
 		apply_penalty_if_threshold(player_index, "tiredness", state.tiredness, MT.exhausted, penalties.tiredness)
 	end

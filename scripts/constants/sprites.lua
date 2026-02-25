@@ -1,4 +1,3 @@
--- TODO: Organize and validate all of this shit.
 local SPRITE_MAP = {
 	-- General emotes.
 	["alert"] = {
@@ -23,7 +22,11 @@ local SPRITE_MAP = {
 		sprite = "virtual-signal/signal-battery-full"
 	},
 	["work"] = {
-		sprite = "virtual-signal/signal-mining"
+		sprite = "pet-work"
+	},
+	["petting"] = {
+		animation = "show-affection",
+		animated = true
 	},
 	-- Combat emotes.
 	["attack"] = {
@@ -48,13 +51,31 @@ local SPRITE_MAP = {
 		sprite = "entity/medium-spitter"
 	},
 	["stay"] = {
-		sprite = "virtual-signal/signal-map-marker"
+		sprite = "item/stone-wall"
 	},
 	["stone"] = {
 		sprite = "item/stone"
 	},
 	["sulfuric-acid"] = {
 		sprite = "item/sulfuric-acid-barrel"
+	},
+	["buff"] = {
+		sprite = "virtual-signal/up-arrow"
+	},
+	["acid"] = {
+		sprite = "entity/small-worm-turret"
+	},
+	["poison"] = {
+		sprite = "item/poison-capsule"
+	},
+	["heat"] = {
+		sprite = "virtual-signal/signal-thermometer-red"
+	},
+	["impact"] = {
+		sprite = "item/locomotive"
+	},
+	["invincible"] = {
+		sprite = "item/power-armor"
 	},
 	-- Feeding emotes.
 	["hungry"] = {

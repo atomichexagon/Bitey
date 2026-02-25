@@ -83,8 +83,6 @@ function pet_spawn.spawn_orphan_baby(player, entry, generate_decoratives)
 
 	entry.unit = pet
 	entry.is_orphaned = true
-	entry.time_of_spawn = game.tick
-	entry.birthday_tick = game.tick
 	entry.biter_tier = species
 	debug.info("Orphaned biter has spawned.")
 end

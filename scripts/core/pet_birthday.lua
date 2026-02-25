@@ -1,3 +1,4 @@
+-- TODO: Give pet ability to detect biter attack party.
 local debug = require("scripts.utilities.debug")
 local notifications = require("scripts.utilities.notifications")
 local pet_state = require("scripts.core.pet_state")
@@ -39,7 +40,6 @@ local function random_quality()
 end
 
 function pet_birthday.give_birthday_gift(player_index, player, entry)
-	game.print("test")
 	if not player then return end
 
 	local gift_table = build_gift_table()
@@ -51,7 +51,6 @@ function pet_birthday.give_birthday_gift(player_index, player, entry)
 
 	if script.active_mods["quality"] then birthday_gift.quality = random_quality() end
 
-	game.print(serpent.block(birthday_gift))
 	pet_state.set_behavior(player_index, "return_item")
 	pet_state.set_returnable_item(player_index, birthday_gift)
 	entry.birthday_tick = game.tick

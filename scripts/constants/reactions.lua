@@ -182,6 +182,18 @@ local ITEM_DEFINITIONS = {
 			morph = 0,
 			thirst = 5,
 			tiredness = -15
+		},
+		glow = {
+			color = {
+				r = 0,
+				g = 0.2,
+				b = 0,
+				a = 0.2
+			},
+			intensity = 1.0,
+			scale = 1.0,
+			time_to_live = 60 * 60 * 5,
+			minimum_darkness = 0.2
 		}
 	},
 	["spoilage"] = {
@@ -488,6 +500,363 @@ local ITEM_DEFINITIONS = {
 			morph = 0,
 			thirst = 1,
 			tiredness = 0
+		}
+	},
+	["iron-bacteria"] = {
+		emotes = {
+			{
+				name = "sick",
+				fast_render = false
+			}
+		},
+		interaction = "eat",
+		need_check = function(needs)
+			return needs.hunger > LC.SEEK_FOOD_HUNGER_THRESHOLD
+		end,
+		modifiers = {
+			boredom = -1,
+			evolution = -1,
+			friendship = -1,
+			happiness = -1,
+			hunger = 1,
+			morph = 0,
+			thirst = 5,
+			tiredness = 5
+		}
+	},
+	["copper-bacteria"] = {
+		emotes = {
+			{
+				name = "sick",
+				fast_render = false
+			}
+		},
+		interaction = "eat",
+		need_check = function(needs)
+			return needs.hunger > LC.SEEK_FOOD_HUNGER_THRESHOLD
+		end,
+		modifiers = {
+			boredom = -1,
+			evolution = -1,
+			friendship = -1,
+			happiness = -1,
+			hunger = 1,
+			morph = 0,
+			thirst = 5,
+			tiredness = 5
+		}
+	},
+	["military-science-pack"] = {
+		emotes = {
+			{
+				name = "buff",
+				fast_render = true
+			},
+			{
+				name = "attack",
+				fast_render = false
+			}
+		},
+		interaction = "eat",
+		modifiers = {
+			boredom = 0,
+			evolution = -1,
+			friendship = 0,
+			happiness = 0,
+			hunger = 1,
+			morph = 0,
+			thirst = 1,
+			tiredness = 1
+		},
+		glow = {
+			color = {
+				r = 1,
+				g = 0.2,
+				b = 0.2,
+				a = 1
+			},
+			intensity = 1.0,
+			scale = 0.5,
+			time_to_live = 60 * 60 * 5,
+			minimum_darkness = 0.2,
+			combat_modifier = {
+				type = "damage",
+				magnitude = 10
+			}
+		}
+	},
+	["chemical-science-pack"] = {
+		emotes = {
+			{
+				name = "buff",
+				fast_render = true
+			},
+			{
+				name = "acid",
+				fast_render = false
+			}
+		},
+		interaction = "eat",
+		modifiers = {
+			boredom = 0,
+			evolution = -1,
+			friendship = 0,
+			happiness = 0,
+			hunger = 1,
+			morph = 0,
+			thirst = 1,
+			tiredness = 1
+		},
+		glow = {
+			color = {
+				r = 0.2,
+				g = 0.2,
+				b = 1,
+				a = 0.2
+			},
+			intensity = 1.0,
+			scale = 0.5,
+			time_to_live = 60 * 60 * 5,
+			minimum_darkness = 0.2,
+			combat_modifier = {
+				type = "acid",
+				magnitude = 0.5
+			}
+		}
+	},
+	["utility-science-pack"] = {
+		emotes = {
+			{
+				name = "buff",
+				fast_render = true
+			},
+			{
+				name = "biter",
+				fast_render = false
+			}
+		},
+		interaction = "eat",
+		modifiers = {
+			boredom = 0,
+			evolution = -1,
+			friendship = 0,
+			happiness = 0,
+			hunger = 1,
+			morph = 0,
+			thirst = 1,
+			tiredness = 1
+		},
+		glow = {
+			color = {
+				r = 0.2,
+				g = 0.2,
+				b = 0,
+				a = 0.2
+			},
+			intensity = 1.0,
+			scale = 0.5,
+			time_to_live = 60 * 60 * 5,
+			minimum_darkness = 0.2,
+			combat_modifier = {
+				type = "physical",
+				magnitude = 0.5
+			}
+		}
+	},
+	["production-science-pack"] = {
+		emotes = {
+			{
+				name = "buff",
+				fast_render = true
+			},
+			{
+				name = "poison",
+				fast_render = false
+			}
+		},
+		interaction = "eat",
+		modifiers = {
+			boredom = 0,
+			evolution = -1,
+			friendship = 0,
+			happiness = 0,
+			hunger = 1,
+			morph = 0,
+			thirst = 1,
+			tiredness = 1
+		},
+		glow = {
+			color = {
+				r = 0.5,
+				g = 0,
+				b = 1,
+				a = 1
+			},
+			intensity = 1.0,
+			scale = 0.5,
+			time_to_live = 60 * 60 * 5,
+			minimum_darkness = 0.2,
+			combat_modifier = {
+				type = "poison",
+				magnitude = 0.5
+			}
+		}
+	},
+	["automation-science-pack"] = {
+		emotes = {
+			{
+				name = "buff",
+				fast_render = true
+			},
+			{
+				name = "heat",
+				fast_render = false
+			}
+		},
+		interaction = "eat",
+		modifiers = {
+			boredom = 0,
+			evolution = -1,
+			friendship = 0,
+			happiness = 0,
+			hunger = 1,
+			morph = 0,
+			thirst = 1,
+			tiredness = 1
+		},
+		glow = {
+			color = {
+				r = 0.2,
+				g = 0,
+				b = 0,
+				a = 0.2
+			},
+			intensity = 1.0,
+			scale = 0.5,
+			time_to_live = 60 * 60 * 5,
+			minimum_darkness = 0.2,
+			combat_modifier = {
+				type = "fire",
+				magnitude = 0.5
+			}
+		}
+	},
+	["logistic-science-pack"] = {
+		emotes = {
+			{
+				name = "buff",
+				fast_render = true
+			},
+			{
+				name = "impact",
+				fast_render = false
+			}
+		},
+		interaction = "eat",
+		modifiers = {
+			boredom = 0,
+			evolution = -1,
+			friendship = 0,
+			happiness = 0,
+			hunger = 1,
+			morph = 0,
+			thirst = 1,
+			tiredness = 1
+		},
+		glow = {
+			color = {
+				r = 0.2,
+				g = 1,
+				b = 0.2,
+				a = 1
+			},
+			intensity = 1.0,
+			scale = 0.5,
+			time_to_live = 60 * 60 * 5,
+			minimum_darkness = 0.2,
+			combat_modifier = {
+				type = "impact",
+				magnitude = 0.5
+			}
+		}
+	},
+	["space-science-pack"] = {
+		emotes = {
+			{
+				name = "buff",
+				fast_render = true
+			},
+			{
+				name = "invincible",
+				fast_render = false
+			}
+		},
+		interaction = "eat",
+		modifiers = {
+			boredom = 0,
+			evolution = -1,
+			friendship = 0,
+			happiness = 0,
+			hunger = 1,
+			morph = 0,
+			thirst = 1,
+			tiredness = 1
+		},
+		glow = {
+			color = {
+				r = 1,
+				g = 1,
+				b = 1,
+				a = 1
+			},
+			intensity = 1.0,
+			scale = 2.0,
+			time_to_live = 60 * 30,
+			minimum_darkness = 0.2,
+			combat_modifier = {
+				type = "all",
+				magnitude = 1,
+				condition = "base"
+			}
+		}
+	},
+	["promethium-science-pack"] = {
+		emotes = {
+			{
+				name = "buff",
+				fast_render = true
+			},
+			{
+				name = "invincible",
+				fast_render = false
+			}
+		},
+		interaction = "eat",
+		modifiers = {
+			boredom = 0,
+			evolution = -1,
+			friendship = 0,
+			happiness = 0,
+			hunger = 1,
+			morph = 0,
+			thirst = 1,
+			tiredness = 1
+		},
+		glow = {
+			color = {
+				r = 1,
+				g = 1,
+				b = 1,
+				a = 1
+			},
+			intensity = 1.0,
+			scale = 2.0,
+			time_to_live = 60 * 30,
+			minimum_darkness = 0.2,
+			combat_modifier = {
+				type = "all",
+				magnitude = 1
+			}
 		}
 	}
 }

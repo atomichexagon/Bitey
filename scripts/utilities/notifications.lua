@@ -1,13 +1,38 @@
 local debug = require("scripts.utilities.debug")
 local pet_state = require("scripts.core.pet_state")
+local position_util = require("scripts.utilities.position_util")
 
 local ITG = require("scripts.constants.notifications").INVESTIGATION_FLAVOR_TEXT_GENERAL
 local ITS = require("scripts.constants.notifications").INVESTIGATION_FLAVOR_TEXT_SPECIFIC
-local FT = require("scripts.constants.notifications").FETCH_FLAVOR_TEXT
+local FFT = require("scripts.constants.notifications").FETCH_FLAVOR_TEXT
+local RFT = require("scripts.constants.notifications").RENAME_FLAVOR_TEXT
+local GFG = require("scripts.constants.notifications").GUARD_FLAVOR_TEXT_GENERAL
+local GFS = require("scripts.constants.notifications").GUARD_FLAVOR_TEXT_SPECIFIC
+local LGT = require("scripts.constants.notifications").LAZY_GUARD_FLAVOR_TEXT
+local PFT = require("scripts.constants.notifications").PETTING_FLAVOR_TEXT
+local PMS = require("scripts.constants.notifications").PETTING_MODIFIERS_AND_SETTINGS
+local FMF = require("scripts.constants.notifications").FOLLOW_ME_FLAVOR_TEXT
+local NOS = require("scripts.constants.notifications").NOTIFICATION_SETTINGS
 
 local notifications = {}
 
+local function can_show_flavor(entry)
+	local now = game.tick
+	entry.last_flavor_tick = entry.last_flavor_tick or 0
+	entry.last_petting_reward_tick = entry.last_petting_reward_tick or 0
+	local flavor_cooldown = PMS.PETTING_FLAVOR_TEXT_COOLDOWN
+	if (now - entry.last_flavor_tick) >= flavor_cooldown then
+		entry.last_flavor_tick = now
+		return true
+	end
+	return false
+end
+
 function notifications.notify(player, message, sound)
+	if not (player and player.valid) then return end
+	local character = player.character
+	if not (character and character.valid) then return end
+
 	if sound then
 		player.play_sound {
 			path = sound,
@@ -15,47 +40,59 @@ function notifications.notify(player, message, sound)
 		}
 	end
 
-	local character = player.character
-	if character and character.valid then
+	local inv = player.get_inventory(defines.inventory.character_armor)
+	local armor = inv and inv[1]
+	local is_mech = armor and armor.valid_for_read and armor.name == "mech-armor"
+	local offset = (is_mech and NOS.MECH_NOTIFICATION_OFFSET) or NOS.PLAYER_NOTIFICATION_OFFSET
 
-		local render_id = rendering.draw_text {
-			text = message,
-			surface = player.surface,
-			target = {
-				entity = character,
-				offset = {
-					0.75,
-					-1.5
-				}
-			},
-			color = {
-				player.color.r,
-				player.color.g,
-				player.color.b,
-				1
-			},
-			text_align = "center",
-			use_rich_text = true,
-			scale = 1,
-			time_to_live = 300
-		}
-	end
+	local render_id = rendering.draw_text {
+		text = message,
+		surface = player.surface,
+		target = {
+			entity = character,
+			offset = offset
+		},
+		color = {
+			player.color.r,
+			player.color.g,
+			player.color.b,
+			1
+		},
+		text_align = "center",
+		use_rich_text = true,
+		scale = 1,
+		time_to_live = 300
+	}
 end
 
 local function humanize_item_name(item_name)
 	if not item_name then return "machine" end
-	return (item_name:gsub("-", " "))
+	return item_name:gsub("-", " ")
 end
 
-function notifications.investigation_flavor_text(player, item_name)
+function notifications.investigation_flavor_text(player, entry, item_name)
+	if not can_show_flavor(entry) then return end
+
 	if math.random() < 0.5 or not item_name then
 		local message = ITG[math.random(#ITG)]
 		notifications.notify(player, message)
-		return		
+		return
 	end
+
 	local formatted_item_name = humanize_item_name(item_name)
 	local template = ITS[math.random(#ITS)]
 	local message = string.format(template, formatted_item_name)
+	notifications.notify(player, message)
+end
+
+function notifications.rename_pet_flavor_text(player, entry, pet_name)
+	if not (player and player.valid) then return end
+	if not can_show_flavor(entry) then return end
+	local player_index = player.index
+	local template = RFT[math.random(#RFT)]
+	local message = string.format(template, pet_name)
+	pet_state.pause(player_index, 120)
+	pet_state.force_emote(player_index, entry, "investigate")
 	notifications.notify(player, message)
 end
 
@@ -68,11 +105,89 @@ function notifications.fetch_flavor_text(player_index, player, entry, item_name)
 		return
 	end
 
-	local count = #FT
+	if not can_show_flavor(entry) then return end
+	local count = #FFT
 	if count == 0 then return end
 	local index = (entry.fetch_plays % count) + 1
-	local message = FT[index]
+	local message = FFT[index]
 	notifications.notify(player, message)
+end
+
+function notifications.follow_flavor_text(player, entry)
+	if not (player and player.valid) then return end
+	if not can_show_flavor(entry) then return end
+	local message = FMF[math.random(#FMF)]
+	notifications.notify(player, message)
+end
+
+function notifications.guard_flavor_text(player, entry)
+	if not (player and player.valid) then return end
+	if not can_show_flavor(entry) then return end
+	local message
+	local structure = position_util.get_nearest_player_structure(player)
+	if structure and structure.name then
+		local structure_name = humanize_item_name(structure.name)
+		local template = GFS[math.random(#GFS)]
+		message = string.format(template, structure_name)
+	else
+		message = GFG[math.random(#GFG)]
+	end
+
+	notifications.notify(player, message)
+end
+
+local function lazy_guard_flavor_text(player, entry)
+	if not (player and player.valid) then return end
+	if not can_show_flavor(entry) then return end
+	local message = LGT[math.random(#LGT)]
+	notifications.notify(player, message)
+end
+
+function notifications.petting_biter_flavor_text(player, entry)
+	if not (player and player.valid) then return end
+
+	local player_index = player.index
+	local now = game.tick
+
+	local reward_cooldown = PMS.PETTING_REWARD_COOLDOWN
+	local can_reward = (now - (entry.last_petting_reward_tick or 0)) >= reward_cooldown
+
+	local affection_emotes = {
+		"mischievous",
+		"ecstatic",
+		"very-happy",
+		"happy",
+		"love",
+		"defend"
+	}
+	local random_emote = affection_emotes[math.random(#affection_emotes)]
+	pet_state.force_emote(player_index, entry, random_emote)
+
+	if can_show_flavor(entry) then
+		local message = PFT[math.random(#PFT)]
+		notifications.notify(player, message)
+	end
+
+	if can_reward then
+		pet_state.add_happiness(player_index, PMS.HAPPINESS_BONUS)
+		pet_state.add_friendship(player_index, PMS.FRIENDSHIP_BONUS)
+		pet_state.add_boredom(player_index, PMS.BOREDOM_BONUS)
+		entry.last_petting_reward_tick = now
+	end
+end
+
+function notifications.process_delayed_commentary(player, entry)
+	if not entry.delayed_commentary then return end
+	if not can_show_flavor(entry) then return end
+
+	local commentary_table = entry.delayed_commentary
+	if commentary_table.commentary == "lazy_guard" then
+		local now = game.tick
+		if now >= commentary_table.tick_trigger then
+			entry.delayed_commentary = nil
+			lazy_guard_flavor_text(player, entry)
+		end
+	end
 end
 
 return notifications

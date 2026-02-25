@@ -61,7 +61,7 @@ local GROWTH_RULES = {
 		hunger_threshold = 25,
 		thirst_threshold = 35,
 		evo_factor_threshold = 0.64,
-		evo_state_threshold = 100,
+		evo_state_threshold = 0,
 		chance = 0.15
 	},
 	["pet-big-biter-large"] = {
@@ -69,7 +69,7 @@ local GROWTH_RULES = {
 		hunger_threshold = 25,
 		thirst_threshold = 25,
 		evo_factor_threshold = 0.76,
-		evo_state_threshold = 0,
+		evo_state_threshold = 100,
 		chance = 0.10
 	},
 	["pet-behemoth-biter-baby"] = {
@@ -157,7 +157,7 @@ local GROWTH_RULES = {
 		hunger_threshold = 25,
 		thirst_threshold = 35,
 		evo_factor_threshold = 0.64,
-		evo_state_threshold = 100,
+		evo_state_threshold = 0,
 		chance = 0.15
 	},
 	["pet-big-spitter-large"] = {
@@ -165,7 +165,7 @@ local GROWTH_RULES = {
 		hunger_threshold = 25,
 		thirst_threshold = 25,
 		evo_factor_threshold = 0.76,
-		evo_state_threshold = 0,
+		evo_state_threshold = 100,
 		chance = 0.10
 	},
 	["pet-behemoth-spitter-baby"] = {

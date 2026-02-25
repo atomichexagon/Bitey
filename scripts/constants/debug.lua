@@ -20,6 +20,10 @@ return {
 		0.65,
 		-0.75
 	},
+	DEBUG_VISUALIZE_DAMAGE_TYPE_OFFSET = {
+		-0.65,
+		-0.75
+	},
 	DEBUG_FOLLOW_RADIUS_COLOR = {
 		r = 0,
 		g = 0,
@@ -43,5 +47,17 @@ return {
 		g = 0,
 		b = 0,
 		a = 255
+	},
+	DEBUG_INVESTIGATION_RADIUS_COLOR = {
+		r = 255,
+		g = 0,
+		b = 255,
+		a = 255
+	},
+	DEBUG_GUARD_RADIUS_COLOR = {
+		r = 0,
+		g = 0,
+		b = 0,
+		a = 0,
 	}
 }

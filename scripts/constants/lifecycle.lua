@@ -1,4 +1,7 @@
 return {
+	-- General.
+	PET_DEFAULT_NAME = "Bitey",
+
 	-- Attacking.
 	PET_ATTACK_RADIUS = 5.0, -- Default: 5.0
 
@@ -59,6 +62,9 @@ return {
 	INTERACT_RADIUS_SQUARED = 1.5 * 1.5,
 	DECONSTRUCTION_RADIUS = 25,
 	DECONSTRUCTION_RADIUS_SQUARED = 25 * 25,
+	GUARD_RADIUS = 10,
+	GUARD_RADIUS_SQUARED = 10 * 10,
+	GUARDING_INVESTIGATION_MULTIPLIER = 3,
 	INVESTIGATION_CHANCE = 0.001, -- Default: 0.001
 	INVESTIGATION_RADIUS = 20,
 	INVESTIGATION_RADIUS_SQUARED = 20 * 20,
@@ -66,25 +72,30 @@ return {
 		"accumulator",
 		"agricultural-tower",
 		"ammo-turret",
+		"artillery-turret",
+		"artillery-wagon",
 		"assembling-machine",
 		"beacon",
 		"boiler",
 		"car",
+		"cargo-landing-pad",
 		"container",
 		"display-panel",
-		"electric-pole",
 		"electric-turret",
 		"furnace",
 		"generator",
+		"lab",
+		"lamp",
 		"mining-drill",
-		"pipe-to-ground",
 		"pump",
 		"radar",
+		"reactor",
 		"roboport",
 		"rocket-silo",
 		"solar-panel",
 		"spider-vehicle",
-		"underground-belt"
+		"train-stop",
+		"turret"
 	},
 	INVESTIGATION_EMOTES = {
 		"confused",
@@ -110,5 +121,11 @@ return {
 	TIREDNESS_WAKE_THRESHOLD = 10,
 	DARKNESS_THRESHOLD = 0.65,
 	HUNGER_WAKE_THRESHOLD = 95,
-	THIRST_WAKE_THRESHOLD = 95
+	THIRST_WAKE_THRESHOLD = 95,
+
+	-- Death.
+	PET_REMAINS_MAP = {
+		biter = "pet-biter-remains-placeholder",
+		spitter = "pet-spitter-remains-placeholder"
+	}
 }

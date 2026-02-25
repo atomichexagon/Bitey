@@ -21,27 +21,45 @@ local function try_draw_sprite(sprite, target, pet)
 	end)
 end
 
-local function show_pet_reaction(player_index, entry, sprite, fast_render)
+local function try_draw_animation(animation, target, pet)
+	return pcall(function()
+		return rendering.draw_animation {
+			animation = animation,
+			target = target,
+			surface = pet.surface,
+			x_scale = RS.EMOTE_SCALE,
+			y_scale = RS.EMOTE_SCALE,
+			time_to_live = RS.TIME_TO_LIVE_FALLBACK
+		}
+	end)
+end
+
+local function show_pet_reaction(player_index, entry, emote_data, fast_render)
 	local fast_render = fast_render or false
 	if not (entry and entry.unit and entry.unit.valid) then return end
 
 	local pet = entry.unit
 	if not (pet and pet.valid) then return end
 
+	local y_offset = (emote_data.animated and RS.EMOTE_ANIMATED_OFFSET) or RS.EMOTE_VERTICAL_OFFSET
 	local target = {
 		entity = pet,
 		offset = {
 			0,
-			RS.EMOTE_VERTICAL_OFFSET
+			y_offset
 		}
 	}
 
-	local debug_descriptor = (fast_render and "Fast render") or "Standard render"
-	debug.trace(string.format("%s queued for sprite [img=%s].", debug_descriptor, sprite))
+	local render_id
+	local successful
+	if emote_data.animated then
+		successful, render_id = try_draw_animation(emote_data.animation, target, pet)
+	else
+		successful, render_id = try_draw_sprite(emote_data.sprite, target, pet)
+	end
 
-	local successful, sprite_id = try_draw_sprite(sprite, target, pet)
 	if not successful then
-		debug.error("Invalid sprite name " .. sprite)
+		-- Error rendering emote.
 		return
 	end
 
@@ -57,7 +75,7 @@ local function show_pet_reaction(player_index, entry, sprite, fast_render)
 	}
 
 	local sprite_render = {
-		sprite = sprite_id,
+		sprite = render_id,
 		light = light_id,
 		color = {
 			r = 255,
@@ -80,11 +98,11 @@ end
 
 function pet_visuals.emote(player_index, entry, emote, fast_render)
 	local pet = entry.unit
+
 	local data = SM[emote]
+	if not data then return end
 
-	local sprite = (data and data.sprite) or emote
-
-	local sprite_render = show_pet_reaction(player_index, entry, sprite, fast_render)
+	local sprite_render = show_pet_reaction(player_index, entry, data, fast_render)
 
 	pet_audio.play_for_size(player_index, entry)
 

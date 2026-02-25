@@ -61,6 +61,17 @@ data:extend({
 		line_length = 3,
 		animation_speed = 0.1,
 		frame_sequence = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,3,3,3,3,3,3,3,3,3,3,2}
+	},
+	{
+		type = "animation",
+		name = "show-affection",
+		filename = "__biter-pet__/graphics/hand.png",
+		width = 66,
+		height = 64,
+		scale = 0.5,
+		frame_count = 6,
+		line_length = 6,
+		animation_speed = 0.4,
+		frame_sequence = {1,1,2,2,3,3,4,4,5,5,6,6,5,4,3,2}
 	}
-
 })

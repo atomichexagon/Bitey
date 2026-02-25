@@ -1,3 +1,7 @@
+local debug = require("scripts.utilities.debug")
+
+local LC = require("scripts.constants.lifecycle")
+
 local position = {}
 
 local DIRECTIONAL_OFFSETS = {
@@ -144,6 +148,30 @@ function position.get_direction_of_position(origin, destination)
 		return vertical .. horizontal
 	end
 	return vertical or horizontal
+end
+
+function position.get_nearest_player_structure(player)
+	local radius = 10
+	local surface = player.surface
+	local position = player.position
+
+	local entities = surface.find_entities_filtered {
+		position = position,
+		radius = radius,
+		force = player.force,
+		type = LC.INVESTIGATION_TARGETS
+	}
+
+	local closest, closest_distance = nil, math.huge
+	for _, entity in ipairs(entities) do
+		local distance = (entity.position.x - position.x) ^ 2 + (entity.position.y - position.y) ^ 2
+		if distance < closest_distance then
+			closest = entity
+			closest_distance = distance
+		end
+	end
+
+	return closest
 end
 
 return position

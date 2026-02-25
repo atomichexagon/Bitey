@@ -165,6 +165,38 @@ function pet_debug.render_path_to_target(player_index, pet, target)
 	}
 end
 
+function pet_debug.render_damage_type(player_index, damage_type)
+	if not pet_debug.visualizers_enabled then return end
+
+	local player = game.get_player(player_index)
+	if not (player and player.valid) then return end
+
+	local entry = storage.biter_pet[player_index]
+	local pet = entry.unit
+	if not (pet and pet.valid) then return end
+
+	if entry.debug_damage_text then entry.debug_damage_text.destroy() end
+
+	entry.debug_damage_text = rendering.draw_text {
+		text = damage_type:upper(),
+		surface = pet.surface,
+		alignment = "right",
+		target = {
+			entity = pet,
+			offset = DC.DEBUG_VISUALIZE_DAMAGE_TYPE_OFFSET
+		},
+		color = {
+			player.color.r,
+			player.color.g,
+			player.color.b,
+			1
+		},
+		scale = 0.8,
+		time_to_live = 180,
+		use_rich_text = true
+	}
+end
+
 function pet_debug.render_pet_behavior(player_index, behavior)
 	if not pet_debug.visualizers_enabled then return end
 
@@ -181,6 +213,7 @@ function pet_debug.render_pet_behavior(player_index, behavior)
 	entry.debug_text = rendering.draw_text {
 		text = friendly_behavior,
 		surface = pet.surface,
+		alignment = "left",
 		target = {
 			entity = pet,
 			offset = DC.DEBUG_VISUALIZE_STATE_OFFSET
@@ -193,7 +226,7 @@ function pet_debug.render_pet_behavior(player_index, behavior)
 		},
 		use_rich_text = true,
 		scale = 0.8,
-		time_to_live = 30
+		time_to_live = 180
 	}
 end
 
@@ -206,7 +239,7 @@ local function render_circle(entry, pet, radius, color)
 		target = pet,
 		surface = pet.surface,
 		draw_on_ground = true,
-		time_to_live = 30
+		time_to_live = 180
 	}
 end
 
@@ -231,6 +264,12 @@ function pet_debug.render_behavioral_radius(player_index, pet, radius, radius_ty
 	elseif radius_type == "attack" then
 		if entry.debug_attack_radius then entry.debug_attack_radius.destroy() end
 		render_circle(entry, pet, radius, DC.DEBUG_ATTACK_RADIUS_COLOR)
+	elseif radius_type == "investigation" then
+		if entry.debug_investigation_radius then entry.debug_investigation_radius.destroy() end
+		render_circle(entry, pet, radius, DC.DEBUG_INVESTIGATION_RADIUS_COLOR)
+	elseif radius_type == "guard" then
+		if entry.debug_guard_radius then entry.debug_guard_radius.destroy() end
+		render_circle(entry, pet, radius, DC.DEBUG_GUARD_RADIUS_COLOR)
 	else
 		if entry.debug_radius then entry.debug_radius.destroy() end
 		render_circle(entry, pet, radius, color or player.color)
@@ -254,6 +293,12 @@ function pet_debug.visualize_behavioral_radii(player_index)
 
 	local attack_radius = LC.PET_ATTACK_RADIUS
 	pet_debug.render_behavioral_radius(player_index, pet, attack_radius, "attack")
+
+	local investigation_radius = LC.INVESTIGATION_RADIUS
+	pet_debug.render_behavioral_radius(player_index, pet, investigation_radius, "investigation")
+
+	local guard_radius = LC.GUARD_RADIUS
+	pet_debug.render_behavioral_radius(player_index, pet, guard_radius, "guard")
 end
 
 function pet_debug.toggle_visualizer()

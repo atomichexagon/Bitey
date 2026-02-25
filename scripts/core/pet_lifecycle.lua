@@ -2,9 +2,12 @@
 -- Biter should follow corpse until it is picked up.
 local debug = require("scripts.utilities.debug")
 local notifications = require("scripts.utilities.notifications")
+local pet_animation = require("scripts.core.pet_animation")
 local pet_behavior = require("scripts.core.pet_behavior")
 local pet_birthday = require("scripts.core.pet_birthday")
 local pet_growth = require("scripts.core.pet_growth")
+local pet_gui = require("scripts.core.pet_gui")
+local pet_memorial = require("scripts.core.pet_memorial")
 local pet_modifiers = require("scripts.core.pet_modifiers")
 local pet_morph = require("scripts.core.pet_morph")
 local pet_reactions = require("scripts.core.pet_reactions")
@@ -175,10 +178,10 @@ local function handle_item_interaction(player_index, player, pet, entry)
 	return true
 end
 
-local function notify_player_of_investigation_if_in_proximity(player, pet, item_name)
+local function notify_player_of_investigation_if_in_proximity(player, pet, entry, item_name)
 	local distance_squared = position_util.distance_squared(player.position, pet.position)
 	if distance_squared <= LC.INVESTIGATION_RADIUS_SQUARED then
-		notifications.investigation_flavor_text(player, item_name)
+		notifications.investigation_flavor_text(player, entry, item_name)
 	end
 end
 
@@ -194,7 +197,7 @@ local function finish_investigation(player_index, player, pet, entry)
 	end
 
 	local item_name = entry.investigation_target.name
-	notify_player_of_investigation_if_in_proximity(player, pet, item_name)
+	notify_player_of_investigation_if_in_proximity(player, pet, entry, item_name)
 
 	local entity_emote = "item/" .. entry.investigation_target.name
 	local emotes = LC.INVESTIGATION_EMOTES
@@ -269,6 +272,24 @@ local function try_starting_investigation(player_index, player, pet, entry)
 	return true
 end
 
+local function get_tether_position(player, entry)
+	if entry.is_orphaned then
+		return storage.pet_spawn_point or pet.position
+	elseif entry.guard_position then
+		return entry.guard_position
+	else
+		return player.position
+	end
+end
+
+local function evaluate_laziness(player_index, entry)
+	local behavior = pet_state.get_behavior(player_index)
+	if math.random() < 0.05 and behavior ~= "sleeping" then
+		pet_state.add_tiredness(player_index, 50)
+		return true
+	end
+end
+
 local function state_idle(player_index, player, pet, entry)
 	if not (pet and pet.valid) then return end
 
@@ -277,13 +298,18 @@ local function state_idle(player_index, player, pet, entry)
 		return
 	end
 
+	local chance_multiplier = (entry.guard_position and LC.GUARDING_INVESTIGATION_MULTIPLIER) or 1
+
+	if entry.guard_position then if evaluate_laziness(player_index, entry) then return end end
+
 	-- Investigate some stuff.
-	if math.random() < LC.INVESTIGATION_CHANCE then
+	if math.random() < (LC.INVESTIGATION_CHANCE * chance_multiplier) then
 		if try_starting_investigation(player_index, player, pet, entry) then return end
 	end
 
 	local radius = LC.FOLLOW_RADIUS_BY_TIER[pet.name] or LC.PET_FOLLOW_RADIUS
-	local tether = entry.is_orphaned and (storage.pet_spawn_point or pet.position) or player.position
+
+	local tether = get_tether_position(player, entry)
 	local distance_squared_to_tether = position_util.distance_squared(pet.position, tether)
 
 	-- Revert back to following if beyond extended idle radius.
@@ -343,11 +369,9 @@ local function state_flee(player_index, player, pet, entry)
 	if debug.current_level >= 4 then
 		local distance_normalized = position_util.distance(pet.position, target.position)
 		local distance_to_escape = LC.PET_FLEE_SAFE_DISTANCE - distance_normalized
-		debug.trace(string.format("Fleeing %s tiles to safe distance.", t.f(distance_to_escape, "f")))
 	end
 
 	if (distance_squared >= (safe_distance_squared)) then
-		debug.info(string.format("Safe distance reached from target %s", t.f(target.name, "f")))
 		pet_state.clear_attack_target(player_index)
 		pet_state.set_behavior(player_index, "follow")
 		pet_modifiers.apply_cowardice_modifiers(player_index, entry)
@@ -391,7 +415,7 @@ local function ensure_runtime_pet(player_index, entry)
 	local last_death = entry.last_death_tick or 0
 
 	local remaining = math.floor((SS.ticks_per_day - (now - last_death)) / 60)
-	debug.trace(string.format("Pet spawn will trigger in %s seconds.", t.f(remaining, "f")))
+	-- debug.trace(string.format("Pet spawn will trigger in %s seconds.", t.f(remaining, "f")))
 	if (now - last_death) >= SS.ticks_per_day or DC.DEBUG_BYPASS_RESPAWN_DELAY then
 		debug.info("Spawning replacement orphan.")
 		pet_spawn.spawn_orphan_baby(player, entry, false)
@@ -433,6 +457,7 @@ local function biter_was_adopted(player, player_index, pet, entry)
 		if math.random() < LC.CHANCE_TO_ADOPT_BITER then
 			pet = entry.unit
 			entry.is_orphaned = false
+			entry.birthday_tick = game.tick
 			pet.force = player.force
 			pet_state.clear_idle_target(player_index)
 			debug.info("Pet has been successfully adopted.")
@@ -460,7 +485,7 @@ local function state_seek_item(player_index, player, pet, entry)
 end
 
 local function state_eat(player_index, player, pet)
-	-- Eating is handled in handle_feeding_behavior().
+	-- Eating is handled in handle_item_interaction().
 	-- This state exists only to transition into pause.
 end
 
@@ -475,7 +500,11 @@ local function state_follow(player_index, player, pet, entry)
 	if entry.is_orphaned then
 		target_position = storage.pet_spawn_point or pet.position
 	else
-		target_position = player.position
+		if entry.guard_position then
+			target_position = entry.guard_position
+		else
+			target_position = player.position
+		end
 	end
 
 	local distance_squared = position_util.distance_squared(pet.position, target_position)
@@ -563,7 +592,10 @@ local function state_return_item(player_index, player, pet, entry)
 	if distance_squared <= LC.INTERACT_RADIUS_SQUARED then
 		player.surface.spill_item_stack {
 			position = drop_position,
-			stack = item_name,
+			stack = {
+				name = item_name,
+				count = 1
+			},
 			enabled_looted = true,
 			max_radius = 2
 		}
@@ -587,19 +619,26 @@ local function evaluate_tiredness(player_index, pet, entry)
 	local thirst = pet_state.get_thirst(player_index)
 	local darkness = pet.surface.darkness
 
-	if entry.current_form == "sleeping" then
+	if entry.current_form == "sleeping" and not entry.guard_position then
 		if tiredness <= LC.TIREDNESS_WAKE_THRESHOLD or hunger >= LC.HUNGER_WAKE_THRESHOLD or thirst >=
 				LC.THIRST_WAKE_THRESHOLD or darkness <= LC.DARKNESS_THRESHOLD then
-			debug.trace(string.format("Took process branch %s", t.f("SLEEP", "f")))
 			set_behavior_state(player_index, pet, entry, "active")
 		end
 		return
+	elseif entry.current_form == "sleeping" and entry.guard_position then
+		if tiredness <= LC.TIREDNESS_WAKE_THRESHOLD then set_behavior_state(player_index, pet, entry, "active") end
 	end
 
 	-- Sleep logic.
-	if entry.current_form == "idle" and tiredness >= LC.TIREDNESS_SLEEP_THRESHOLD and darkness >= LC.DARKNESS_THRESHOLD and
+	if entry.current_form == "idle" and entry.guard_position and tiredness >= LC.TIREDNESS_SLEEP_THRESHOLD then
+		entry.lazy_guard = false
+		entry.delayed_commentary = {
+			commentary = "lazy_guard",
+			tick_trigger = game.tick + 120
+		}
+		set_behavior_state(player_index, pet, entry, "sleeping")
+	elseif entry.current_form == "idle" and tiredness >= LC.TIREDNESS_SLEEP_THRESHOLD and darkness >= LC.DARKNESS_THRESHOLD and
 			hunger < LC.HUNGER_WAKE_THRESHOLD and thirst < LC.THIRST_WAKE_THRESHOLD then
-		debug.trace(string.format("Took process branch %s", t.f("SLEEP", "f")))
 		set_behavior_state(player_index, pet, entry, "sleeping")
 		return
 	end
@@ -669,6 +708,8 @@ local function process_pet(player_index)
 	local pet = ensure_runtime_pet(player_index, entry)
 	if not pet then return end
 
+	notifications.process_delayed_commentary(player, entry)
+
 	-- Sleeping branch.
 	if entry.current_form == "sleeping" then
 		pet_state.tick_pet_state(player_index, entry)
@@ -684,15 +725,11 @@ local function process_pet(player_index)
 	local behavior = pet_state.get_behavior(player_index)
 
 	-- Return fetched item.
-	if behavior == "return_item" then
-		debug.trace(string.format("Took process branch %s", t.f("RETURN_ITEM", "f")))
-		return state_return_item(player_index, player, pet, entry)
-	end
+	if behavior == "return_item" then return state_return_item(player_index, player, pet, entry) end
 
 	evaluate_returnable_item_state(player_index, player, pet)
 	-- Combat branch.
 	if behavior == "flee" then
-		debug.trace(string.format("Took process branch %s", t.f("FLEE", "f")))
 		state_flee(player_index, player, pet, entry)
 		return
 	end
@@ -704,7 +741,6 @@ local function process_pet(player_index)
 	end
 
 	if behavior == "attack" then
-		debug.trace(string.format("Took process branch %s", t.f("ATTACK", "f")))
 		state_attack(player_index, player, pet, entry)
 		return
 	end
@@ -732,17 +768,13 @@ local function process_pet(player_index)
 	pet_state.tick_pet_state(player_index, entry)
 
 	-- Pause branch.
-	if handle_pause(player_index, entry, pet) then
-		debug.trace(string.format("Took process branch %s", t.f("PAUSE", "f")))
-		return
-	end
+	if handle_pause(player_index, entry, pet) then return end
 
 	-- Evaluate sleep needs.
 	evaluate_tiredness(player_index, pet, entry)
 
 	-- Feed and follow branch.
 	if behavior ~= "return_item" then
-		debug.trace(string.format("Took target evaluation branch %s", t.f("ATTACK", "f")))
 		local target = pet_state.get_item_target(player_index)
 		evaluate_target(player_index, pet, entry, target)
 	end
@@ -750,35 +782,81 @@ local function process_pet(player_index)
 	-- State branching.
 	behavior = pet_state.get_behavior(player_index)
 	if behavior == "seek_item" then
-		debug.trace(string.format("Took process branch %s", t.f("SEEK_ITEM", "f")))
 		return state_seek_item(player_index, player, pet, entry)
 	elseif behavior == "deconstruct_tree" then
-		debug.trace(string.format("Took process branch %s", t.f("DECONSTRUCT_TREE", "f")))
 		return state_deconstruct_tree(player_index, player, pet, entry)
 	elseif behavior == "eat" then
-		debug.trace(string.format("Took process branch %s", t.f("EAT", "f")))
 		return state_eat(player_index, player, pet)
 	elseif behavior == "follow" then
-		debug.trace(string.format("Took process branch %s", t.f("FOLLOW", "f")))
 		return state_follow(player_index, player, pet, entry)
 	elseif behavior == "idle" then
-		debug.trace(string.format("Took process branch %s", t.f("IDLE", "f")))
 		return state_idle(player_index, player, pet, entry)
 	end
 
 	-- Fallback behavior.
-	debug.trace(string.format("Took process branch %s", t.f("FALLBACK", "f")))
 	pet_state.set_behavior(player_index, "idle")
 	state_idle(player_index, player, pet, entry)
 end
 
+local function prune_expired_buffs(entry)
+	if not entry.combat_buffs then return end
+	for i = #entry.combat_buffs, 1, -1 do
+		if game.tick >= entry.combat_buffs[i].expire_tick then table.remove(entry.combat_buffs, i) end
+	end
+end
+
 function pet_lifecycle.on_tick(event)
-	if (event.tick % 30) ~= 0 then return end
 	if not storage.biter_pet then return end
+	if (event.tick % 30) ~= 0 then return end
 	for player_index, entry in pairs(storage.biter_pet) do
 		process_pet(player_index)
 		pet_behavior.process_events(player_index, entry)
+		pet_gui.update_pet_gui_progressbars(player_index)
+		prune_expired_buffs(entry)
+		pet_memorial.monitor_memorials(event)
 	end
+end
+
+local function cleanup_pet_entry(player_index, entry)
+	if entry.glow_id then
+		entry.glow_id.destroy()
+		entry.glow_id = nil
+	end
+
+	-- Record time of death. 😭
+	entry.last_death_tick = game.tick
+
+	local final_friendship = pet_state.get_friendship(player_index)
+	local final_happiness = pet_state.get_happiness(player_index)
+	entry.last_death_bond_level = math.floor((final_friendship + final_happiness) / 2)
+
+	entry.active_glow = nil
+	entry.combat_buffs = nil
+	entry.current_form = "active"
+	entry.fetch_plays = 0
+	entry.is_orphaned = true
+	entry.unit = nil
+	entry.was_alive = false
+
+	pet_state.reset_state_to_defaults(player_index)
+	pet_state.clear_attack_target(player_index)
+	pet_state.clear_tree_target(player_index)
+	pet_state.clear_idle_target(player_index)
+	pet_state.clear_item_target(player_index)
+
+	local state = pet_state.get_state(player_index)
+	state.last_tree_target = nil
+end
+
+local function spawn_remains_placeholder(pet, species)
+	local surface = pet.surface
+	local position = pet.position
+	local placeholder = LC.PET_REMAINS_MAP[species] or "pet-biter-remains-placeholder"
+	surface.create_entity {
+		name = placeholder,
+		position = position,
+		force = "neutral"
+	}
 end
 
 function pet_lifecycle.on_entity_died(event)
@@ -800,25 +878,8 @@ function pet_lifecycle.on_entity_died(event)
 	if entity.type ~= "unit" then return end
 	for player_index, entry in pairs(storage.biter_pet) do
 		if entity == entry.unit then
-			debug.info("Pet death event has been triggered.");
-			entry.unit = nil
-			entry.was_alive = false
-			entry.fetch_plays = 0
-			-- Record the time of death. 😭
-			entry.last_death_tick = game.tick
-
-			pet_state.reset_state_to_defaults(player_index)
-
-			pet_state.clear_attack_target(player_index)
-			pet_state.clear_tree_target(player_index)
-			pet_state.clear_idle_target(player_index)
-			pet_state.clear_item_target(player_index)
-
-			local state = pet_state.get_state(player_index)
-			state.last_tree_target = nil
-			entry.is_orphaned = true
-			entry.current_form = "active"
-
+			spawn_remains_placeholder(entry.unit, entry.current_species)
+			cleanup_pet_entry(player_index, entry)
 			local player = game.get_player(player_index)
 
 			-- Check origin of damage.
@@ -830,6 +891,21 @@ function pet_lifecycle.on_entity_died(event)
 			return
 		end
 	end
+end
+
+function pet_lifecycle.stop_guarding(player_index, entry, pet)
+	pet_state.set_behavior(player_index, "follow")
+	pet_state.force_emote(player_index, entry, "defend")
+end
+
+function pet_lifecycle.start_guarding(player_index, entry, pet)
+	pet.commandable.set_command {
+		type = defines.command.stop,
+		distraction = defines.distraction.none
+	}
+	pet_state.pause(player_index, 300)
+	pet_state.force_emote(player_index, entry, "stay", true)
+	pet_state.force_emote(player_index, entry, "attack")
 end
 
 function pet_lifecycle.debug_dump(player)

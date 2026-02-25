@@ -1,4 +1,3 @@
--- Re-work investigate and sleeping emotes (too hard to see).
 data:extend({
 	{
 		type = "sprite",
@@ -143,5 +142,21 @@ data:extend({
 		size = 64,
 		mipmap_count = 4,
 		scale = 0.5
+	}
+})
+
+local steel_axe = data.raw["technology"]["steel-axe"]
+
+data:extend({
+	{
+		type = "sprite",
+		name = "pet-work",
+		filename = steel_axe.icon,
+		size = 256,
+		mipmap_count = 4,
+		scale = (64 / 256) * 0.5,
+		flags = {
+			"gui-icon"
+		}
 	}
 })
