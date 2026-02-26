@@ -1,4 +1,3 @@
--- TODO: Give pet ability to detect biter attack party.
 local debug = require("scripts.utilities.debug")
 local notifications = require("scripts.utilities.notifications")
 local pet_state = require("scripts.core.pet_state")

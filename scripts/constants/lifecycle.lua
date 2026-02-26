@@ -15,6 +15,7 @@ return {
 	PET_FLEE_BOREDOM_PENALTY = -15, -- Default: -15
 
 	-- Following.
+	PET_GUARD_CORPSE_RADIUS = 3.0,
 	PET_FOLLOW_RADIUS = 6.0,
 	FOLLOW_RADIUS_BY_TIER = {
 		["pet-small-biter-baby"] = 3.0,
@@ -128,5 +129,9 @@ return {
 	PET_REMAINS_MAP = {
 		biter = "pet-biter-remains-placeholder",
 		spitter = "pet-spitter-remains-placeholder"
+	},
+	VALID_PET_REMAINS = {
+		["pet-biter-remains-placeholder"] = true,
+		["pet-spitter-remains-placeholder"] = true
 	}
 }

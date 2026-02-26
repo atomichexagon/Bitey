@@ -124,6 +124,41 @@ local PETTING_FLAVOR_TEXT = {
 	"Does petting even work on an exoskeleton?"
 }
 
+local PICKUP_REMAINS_FLAVOR_TEXT = {
+	"You were so brave...",
+	"...",
+	"Forgive me...",
+	"I hope you're in a better place...",
+	"You didn't deserve this...",
+	"I wish we had more time...",
+	"I failed you...",
+	"I won't forget you...",
+	"Just rest now..."
+}
+
+local PICKUP_LONG_LIVED_REMAINS_FLAVOR_TEXT = {
+	"This world feels empty now...",
+	"I just thought we'd have more time...",
+	"You made this place feel like home...",
+	"I'll carry your memory...",
+	"You journey doesn't end here...",
+	"Rest now, old friend...",
+	"The light has gone from my life..."
+}
+
+local PLAYER_RESURRECTED_FLAVOR_TEXT = {
+	"Tis but a scratch...",
+	"Miss me?",
+	"I won't go down that easy...",
+	"I've had worse...",
+	"Guess who's back?",
+	"Back in one piece... mostly.",
+	"You waited for me?",
+	"Let's not do that again.",
+	"I was only mostly dead...",
+	"Still in one piece..."
+}
+
 local PETTING_MODIFIERS_AND_SETTINGS = {
 	PETTING_FLAVOR_TEXT_COOLDOWN = 60 * 5,
 	PETTING_REWARD_COOLDOWN = 60 * 60 * 5,
@@ -155,5 +190,8 @@ return {
 	LAZY_GUARD_FLAVOR_TEXT = LAZY_GUARD_FLAVOR_TEXT,
 	PETTING_MODIFIERS_AND_SETTINGS = PETTING_MODIFIERS_AND_SETTINGS,
 	PETTING_FLAVOR_TEXT = PETTING_FLAVOR_TEXT,
-	PET_SENSES_DANGER_FLAVOR_TEXT = PET_SENSES_DANGER_FLAVOR_TEXT
+	PET_SENSES_DANGER_FLAVOR_TEXT = PET_SENSES_DANGER_FLAVOR_TEXT,
+	PICKUP_REMAINS_FLAVOR_TEXT = PICKUP_REMAINS_FLAVOR_TEXT,
+	PICKUP_LONG_LIVED_REMAINS_FLAVOR_TEXT = PICKUP_LONG_LIVED_REMAINS_FLAVOR_TEXT,
+	PLAYER_RESURRECTED_FLAVOR_TEXT = PLAYER_RESURRECTED_FLAVOR_TEXT
 }

@@ -101,9 +101,10 @@ function position.direction_from_orientation(orientation)
 	return math.floor(orientation * 16 + 0.5) % 16
 end
 
-function position.pick_idle_target(pet_position, tether, radius)
-	for i = 1, 20 do
+function position.pick_idle_target(pet_position, tether, radius, pet)
+	if not (pet and pet.valid) then return nil end
 
+	for i = 1, 40 do
 		local angle = math.random() * math.pi * 2
 		local distance = radius * (0.5 + math.random() * 0.5)
 
@@ -112,9 +113,18 @@ function position.pick_idle_target(pet_position, tether, radius)
 			y = pet_position.y + math.sin(angle) * distance
 		}
 
-		if position.distance_squared(candidate, tether) <= radius * radius then return candidate end
+		if position.distance_squared(candidate, tether) <= radius * radius then
+			local surface = pet.surface
+			local is_valid_candidate = surface.can_place_entity {
+				name = pet.name,
+				position = candidate,
+				force = pet.force,
+				build_check_type = defines.build_check_type.script
+			}
+			if is_valid_candidate then return candidate end
+		end
 	end
-
+	-- Stay put if no valid targets located.
 	return pet_position
 end
 
@@ -172,6 +182,14 @@ function position.get_nearest_player_structure(player)
 	end
 
 	return closest
+end
+
+function position.orient_towards_target(pet, target)
+	local distance_x = target.position.x - pet.position.x
+	local distance_y = target.position.y - pet.position.y
+	local angle = math.atan2(distance_y, distance_x)
+	local orientation = (angle / (2 * math.pi) + 0.25) % 1
+	pet.orientation = orientation
 end
 
 return position

@@ -1,4 +1,3 @@
--- TODO: Change recipe requirements and crafting time.
 data:extend({
 	{
 		type = "technology",
@@ -111,7 +110,7 @@ data:extend({
 			{
 				type = "item",
 				name = "wood",
-				amount = 50
+				amount = 100
 				
 			},
 			{

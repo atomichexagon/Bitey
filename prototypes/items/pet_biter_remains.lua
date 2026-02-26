@@ -110,7 +110,7 @@ data:extend({
 			{
 				type = "item",
 				name = "wood",
-				amount = 50
+				amount = 100
 				
 			},
 			{

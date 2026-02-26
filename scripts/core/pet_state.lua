@@ -51,9 +51,7 @@ end
 
 function pet_state.reset_state_to_defaults(player_index)
 	local state = ensure_state(player_index)
-	for key, value in pairs(SD) do
-		state[key] = value
-	end
+	for key, value in pairs(SD) do state[key] = value end
 end
 
 function pet_state.get_state(player_index)
@@ -201,7 +199,6 @@ function pet_state.switch_to_enemy_force(player_index, entry)
 	pet.force = game.forces["enemy"]
 end
 
-
 -- General mood functions.
 local function pick_random_mood(player_index, mood_table)
 	local table_size = #mood_table
@@ -234,8 +231,9 @@ local function all_needs_above_average(player_index)
 			       MT.devoted)
 end
 
-local function calculate_dreams(player_index)
+local function calculate_dreams(player_index, entry)
 	local state = ensure_state(player_index)
+	if entry.guarding_body then return "very-sad" end
 	local dream_table = {}
 	dream_table[#dream_table + 1] = "sleeping"
 
@@ -254,9 +252,11 @@ local function calculate_dreams(player_index)
 	return "confused"
 end
 
-local function calculate_mood(player_index)
+local function calculate_mood(player_index, entry)
 	local state = ensure_state(player_index)
 	local mood_table = {}
+
+	if entry.guarding_body then return "very-sad" end
 
 	-- All pet needs are met and stats are above average.
 	if all_needs_above_average(player_index) then return "ecstatic" end
@@ -356,10 +356,9 @@ function pet_state.tick_pet_state(player_index, entry)
 
 	state.next_mood_calc_tick = state.next_mood_calc_tick or now + intervals.mood
 	if now >= state.next_mood_calc_tick then
-		debug.trace("Pet state tick firing.")
-		
+
 		-- Recalculate mood.
-		state.mood = mood_function(player_index)
+		state.mood = mood_function(player_index, entry)
 
 		debug.info(string.format("%s [%s]", "A new mood has been calculated and queued", t.f(state.mood, "f")))
 		pet_state.queue_emote(player_index, pet, state.mood)
@@ -419,7 +418,7 @@ end
 function pet_state.get_tree_target(player_index)
 	local state = ensure_state(player_index)
 	return state.tree_target
-end	
+end
 
 function pet_state.set_tree_target(player_index, entity)
 	local state = ensure_state(player_index)

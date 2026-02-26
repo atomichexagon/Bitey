@@ -3,6 +3,7 @@ local pet_state = require("scripts.core.pet_state")
 local position_util = require("scripts.utilities.position_util")
 
 local LC = require("scripts.constants.lifecycle")
+local DC = require("scripts.constants.debug")
 
 local ITG = require("scripts.constants.notifications").INVESTIGATION_FLAVOR_TEXT_GENERAL
 local ITS = require("scripts.constants.notifications").INVESTIGATION_FLAVOR_TEXT_SPECIFIC
@@ -16,6 +17,9 @@ local PMS = require("scripts.constants.notifications").PETTING_MODIFIERS_AND_SET
 local FMF = require("scripts.constants.notifications").FOLLOW_ME_FLAVOR_TEXT
 local NOS = require("scripts.constants.notifications").NOTIFICATION_SETTINGS
 local PSD = require("scripts.constants.notifications").PET_SENSES_DANGER_FLAVOR_TEXT
+local PUR = require("scripts.constants.notifications").PICKUP_REMAINS_FLAVOR_TEXT
+local PLL = require("scripts.constants.notifications").PICKUP_LONG_LIVED_REMAINS_FLAVOR_TEXT
+local PRF = require("scripts.constants.notifications").PLAYER_RESURRECTED_FLAVOR_TEXT
 
 local notifications = {}
 
@@ -116,10 +120,33 @@ function notifications.fetch_flavor_text(player_index, player, entry, item_name)
 	notifications.notify(player, message)
 end
 
+function notifications.player_resurrected_flavor_text(player, entry)
+	if not (player and player.valid) then return end
+	if not can_show_flavor(entry) then return end
+	local message = PRF[math.random(#PRF)]
+	notifications.notify(player, message)
+end
+
 function notifications.follow_flavor_text(player, entry)
 	if not (player and player.valid) then return end
 	if not can_show_flavor(entry) then return end
 	local message = FMF[math.random(#FMF)]
+	notifications.notify(player, message)
+end
+
+function notifications.pickup_remains_flavor_text(player, entry)
+	if not (player and player.valid) then return end
+	if not can_show_flavor(entry) then return end
+	
+	local length_of_bond = game.tick - entry.birthday_tick
+	local special_bond = (length_of_bond >= (LC.MEMORIAL_BOND_THRESHOLD / 2)) or DC.DEBUG_BYPASS_BOND_ELIGIBILITY
+	local message
+
+	if special_bond then
+		message = PLL[math.random(#PLL)]
+	else
+		message = PUR[math.random(#PUR)]
+	end
 	notifications.notify(player, message)
 end
 

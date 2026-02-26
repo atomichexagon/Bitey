@@ -1,5 +1,3 @@
--- TODO: On player death; biter happiness should go to zero if friendship was high.
--- Biter should follow corpse until it is picked up.
 local debug = require("scripts.utilities.debug")
 local notifications = require("scripts.utilities.notifications")
 local pet_animation = require("scripts.core.pet_animation")
@@ -239,14 +237,6 @@ local function state_investigation(player_index, player, pet, entry)
 
 end
 
-local function orient_towards_investigation_target(pet, target)
-	local distance_x = target.position.x - pet.position.x
-	local distance_y = target.position.y - pet.position.y
-	local angle = math.atan2(distance_y, distance_x)
-	local orientation = (angle / (2 * math.pi) + 0.25) % 1
-	pet.orientation = orientation
-end
-
 local function try_starting_investigation(player_index, player, pet, entry)
 	local entities = pet.surface.find_entities_filtered {
 		position = pet.position,
@@ -266,7 +256,7 @@ local function try_starting_investigation(player_index, player, pet, entry)
 		type = defines.command.stop,
 		distraction = defines.distraction.none
 	}
-	orient_towards_investigation_target(pet, target)
+	position_util.orient_towards_target(pet, target)
 	pet_state.pause(player_index, 60)
 	pet_state.force_emote(player_index, entry, "investigate")
 	return true
@@ -293,27 +283,33 @@ end
 local function state_idle(player_index, player, pet, entry)
 	if not (pet and pet.valid) then return end
 
-	if entry.investigating then
-		state_investigation(player_index, player, pet, entry)
-		return
+	if not entry.guarding_body then
+
+		if entry.investigating then
+			state_investigation(player_index, player, pet, entry)
+			return
+		end
+		local chance_multiplier = (entry.guard_position and LC.GUARDING_INVESTIGATION_MULTIPLIER) or 1
+
+		-- Guard duty is very boring.
+		if entry.guard_position then if evaluate_laziness(player_index, entry) then return end end
+
+		-- Investigate some stuff.
+		if math.random() < (LC.INVESTIGATION_CHANCE * chance_multiplier) then
+			if try_starting_investigation(player_index, player, pet, entry) then return end
+		end
 	end
 
-	local chance_multiplier = (entry.guard_position and LC.GUARDING_INVESTIGATION_MULTIPLIER) or 1
-
-	if entry.guard_position then if evaluate_laziness(player_index, entry) then return end end
-
-	-- Investigate some stuff.
-	if math.random() < (LC.INVESTIGATION_CHANCE * chance_multiplier) then
-		if try_starting_investigation(player_index, player, pet, entry) then return end
-	end
-
-	local radius = LC.FOLLOW_RADIUS_BY_TIER[pet.name] or LC.PET_FOLLOW_RADIUS
+	local radius = (entry.guarding_body and LC.PET_GUARD_CORPSE_RADIUS) or LC.FOLLOW_RADIUS_BY_TIER[pet.name] or
+			               LC.PET_FOLLOW_RADIUS
 
 	local tether = get_tether_position(player, entry)
 	local distance_squared_to_tether = position_util.distance_squared(pet.position, tether)
 
-	-- Revert back to following if beyond extended idle radius.
-	if distance_squared_to_tether > (radius * radius * LC.IDLE_RADIUS_MULTIPLIER) then
+	-- Revert back to follow state if pet wanders beyond extended idle radius.
+	local idle_distance_multiplier = (entry.guarding_body and 1) or LC.IDLE_RADIUS_MULTIPLIER
+
+	if distance_squared_to_tether > (radius * radius * idle_distance_multiplier) then
 		pet_state.set_behavior(player_index, "follow")
 		return
 	end
@@ -322,7 +318,7 @@ local function state_idle(player_index, player, pet, entry)
 	local idle_target = pet_state.get_idle_target(player_index)
 
 	if not idle_target then
-		idle_target = position_util.pick_idle_target(pet.position, tether, radius)
+		idle_target = position_util.pick_idle_target(pet.position, tether, radius, pet)
 		pet_state.set_idle_target(player_index, idle_target)
 	end
 
@@ -881,13 +877,12 @@ function pet_lifecycle.on_entity_died(event)
 			local player = game.get_player(player_index)
 			local length_of_bond = game.tick - entry.birthday_tick
 
-			local killed_by_player = (event.force == player.foce)
+			local killed_by_player = (event.force == player.force)
 			local eligible_for_memorial = (length_of_bond >= LC.MEMORIAL_BOND_THRESHOLD) or DC.DEBUG_BYPASS_MEMORIAL_ELIGIBILITY
 
-			if killed_by_player then
+			if killed_by_player and not DC.DEBUG_BYPASS_MEMORIAL_ELIGIBILITY then
 				if player then notifications.notify(player, "I'm a monster...") end
 			else
-				-- TODO: Notify player when remains are picked up. "You were so brave...", etc.
 				if player then notifications.notify(player, "No...") end
 				if eligible_for_memorial then spawn_remains_placeholder(entry.unit, entry.current_species) end
 			end

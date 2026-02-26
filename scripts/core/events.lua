@@ -321,7 +321,6 @@ function events.on_player_main_inventory_changed(event)
 	if inventory.get_item_count("pet-biter-remains") > 0 then
 		local technology = player.force.technologies["pet-biter-grief-processing"]
 		if technology and not technology.researched then
-			game.print("test")
 			technology.researched = true
 			technology.enabled = true
 			player.unlock_achievement("pet-fallen")
@@ -340,8 +339,15 @@ end
 
 function events.on_player_mined_entity(event)
 	local entity = event.entity
-	if entity.name ~= "pet-biter-remains-placeholder" and entity.name ~= "pet-spitter-remains-placeholder" then return end
+	if not LC.VALID_PET_REMAINS[entity.name] then return end
 
+	local player = game.get_player(event.player_index)
+	if not (player and player.valid) then return end
+
+	local entry = storage.biter_pet[player.index]
+	if not entry then return end
+
+	notifications.pickup_remains_flavor_text(player, entry)
 	local surface = entity.surface
 	local position = entity.position
 
@@ -367,7 +373,12 @@ function events.on_gui_switch_state_changed(event)
 			entry.lazy_guard = false
 			entry.guard_position = nil
 			pet_lifecycle.stop_guarding(player_index, entry, pet)
-			notifications.follow_flavor_text(player, entry)
+			if entry.guarding_body then
+				entry.guarding_body = nil
+				pet_behavior.reunion_of_friends(player_index, player, entry, pet)
+			else
+				notifications.follow_flavor_text(player, entry)
+			end
 		else
 			entry.lazy_guard = true
 			entry.guard_position = pet.position
@@ -378,11 +389,33 @@ function events.on_gui_switch_state_changed(event)
 	events.pet_close_gui(event)
 end
 
-local function on_atack_wave_detected(surface, attack_position)
+local function on_atack_wave_detected(group)
 	for player_index, entry in pairs(storage.biter_pet) do
 		local pet = entry.unit
-		if pet and pet.valid and pet.surface == surface then
-			pet_behavior.pet_senses_danger(player_index, entry, attack_position)
+		if pet and pet.valid and pet.surface == group.surface and not entry.is_orphaned then
+			pet_behavior.pet_senses_danger(player_index, entry, group)
+		end
+	end
+end
+
+function events.on_player_died(event)
+	local player_index = event.player_index
+	local player = game.get_player(player_index)
+
+	local entry = storage.biter_pet[player_index]
+	if not entry then return end
+
+	local pet = entry.unit
+	if not (pet and pet.valid and pet.surface) then return end
+
+	for _, corpse in pairs(pet.surface.find_entities_filtered {
+		position = position,
+		type = "character-corpse",
+		radius = 50
+	}) do
+		local position = corpse.position
+		if corpse.character_corpse_player_index == player_index and position then
+			pet_behavior.guard_player_corpse(player_index, entry, pet, position)
 		end
 	end
 end
@@ -391,7 +424,7 @@ function events.on_unit_group_finished_gathering(event)
 	local group = event.group
 	if not (group and group.valid) then return end
 	if not (group.surface and group.position) then return end
-	on_atack_wave_detected(group.surface, group.position)
+	on_atack_wave_detected(group)
 end
 
 return events

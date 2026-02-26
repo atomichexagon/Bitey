@@ -118,11 +118,33 @@ function pet_behavior.on_pet_damaged(player_index, entry, event)
 	end
 end
 
--- TODO: Orient pet towards attack_position.
--- TODO: Only detect attacks if not orphaned (this might already be the case, I don't remember.)
-function pet_behavior.pet_senses_danger(player_index, entry, attack_position)
+function pet_behavior.guard_player_corpse(player_index, entry, pet, position)
+	local friendship = pet_state.get_friendship(player_index)
+	local happiness_penalty = friendship * -1
+	pet_state.set_happiness(player_index, happiness_penalty)
+
+	pet.commandable.set_command {
+		type = defines.command.go_to_location,
+		destination = position,
+		radius = 0.5,
+		distraction = defines.distraction.none
+	}
+	entry.guard_position = position
+	entry.guarding_body = true
+
+	pet_state.force_emote(player_index, entry, "defend")
+	pet_state.force_emote(player_index, entry, "very-sad")
+end
+
+function pet_behavior.pet_senses_danger(player_index, entry, group)
 	local pet = entry.unit
 	if not (pet and pet.valid) then return end
+
+	pet.commandable.set_command {
+		type = defines.command.stop,
+		distraction = defines.distraction.none
+	}
+	position_util.orient_towards_target(pet, group)
 
 	pet_state.pause(player_index, 300)
 	pet_state.force_emote(player_index, entry, "alert")
@@ -138,6 +160,18 @@ function pet_behavior.pet_senses_danger(player_index, entry, attack_position)
 			tick_trigger = game.tick + 60
 		}
 	end
+end
+
+function pet_behavior.reunion_of_friends(player_index, player, entry, pet)
+	notifications.player_resurrected_flavor_text(player, entry)
+	pet.commandable.set_command {
+		type = defines.command.stop,
+		distraction = defines.distraction.none
+	}
+	position_util.orient_towards_target(pet, player)
+	pet_state.pause(player_index, 60)
+	pet_state.force_emote(player_index, entry, "horrified", true)
+	pet_state.force_emote(player_index, entry, "love")
 end
 
 return pet_behavior
