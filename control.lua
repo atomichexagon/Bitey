@@ -18,7 +18,7 @@ local function register_runtime_events()
 	script.on_event(defines.events.on_player_mined_entity, events.on_player_mined_entity)
 	script.on_event(defines.events.on_player_main_inventory_changed, events.on_player_main_inventory_changed)
 	script.on_event(defines.events.on_built_entity, events.on_built_entity)
-
+	script.on_event(defines.events.on_unit_group_finished_gathering, events.on_unit_group_finished_gathering)
 	script.on_event(defines.events.on_tick, events.on_tick)
 	script.on_event("pet-close-gui", events.pet_close_gui)
 	script.on_event("pet-interact", events.pet_interact)

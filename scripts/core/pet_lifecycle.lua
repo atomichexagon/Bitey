@@ -578,6 +578,7 @@ end
 
 local function state_return_item(player_index, player, pet, entry)
 	local item_name = pet_state.get_returnable_item(player_index)
+	if entry.is_orphaned then return end
 
 	if not item_name then
 		pet_state.set_behavior(player_index, "idle")
@@ -708,8 +709,6 @@ local function process_pet(player_index)
 	local pet = ensure_runtime_pet(player_index, entry)
 	if not pet then return end
 
-	notifications.process_delayed_commentary(player, entry)
-
 	-- Sleeping branch.
 	if entry.current_form == "sleeping" then
 		pet_state.tick_pet_state(player_index, entry)
@@ -814,6 +813,7 @@ function pet_lifecycle.on_tick(event)
 		pet_gui.update_pet_gui_progressbars(player_index)
 		prune_expired_buffs(entry)
 		pet_memorial.monitor_memorials(event)
+		notifications.process_delayed_commentary(player_index, entry)
 	end
 end
 
@@ -878,16 +878,20 @@ function pet_lifecycle.on_entity_died(event)
 	if entity.type ~= "unit" then return end
 	for player_index, entry in pairs(storage.biter_pet) do
 		if entity == entry.unit then
-			spawn_remains_placeholder(entry.unit, entry.current_species)
-			cleanup_pet_entry(player_index, entry)
 			local player = game.get_player(player_index)
+			local length_of_bond = game.tick - entry.birthday_tick
 
-			-- Check origin of damage.
-			if event.force == player.force then
+			local killed_by_player = (event.force == player.foce)
+			local eligible_for_memorial = (length_of_bond >= LC.MEMORIAL_BOND_THRESHOLD) or DC.DEBUG_BYPASS_MEMORIAL_ELIGIBILITY
+
+			if killed_by_player then
 				if player then notifications.notify(player, "I'm a monster...") end
 			else
+				-- TODO: Notify player when remains are picked up. "You were so brave...", etc.
 				if player then notifications.notify(player, "No...") end
+				if eligible_for_memorial then spawn_remains_placeholder(entry.unit, entry.current_species) end
 			end
+			cleanup_pet_entry(player_index, entry)
 			return
 		end
 	end
@@ -932,13 +936,17 @@ function pet_lifecycle.debug_dump(player)
 	local health = string.format("[color=%s]%.1f[/color] | [color=%s]%.1f[/color]", health_color, pet.health or -1,
 			TF.FULL_HEALTH, pet.prototype and pet.prototype.get_max_health() or -1)
 
+	local fetch_plays = entry.fetch_plays or 0
+
 	-- Final format.
 	local pet_name = string.format("%s %s", t.fm("Tier:", "l"), t.fm(pet.name or "<?>", "m", 1))
 	local pet_type = string.format("%s %s", t.fm("Type:", "l"), t.fm(pet.type or "<?>", "m", 1))
 	local pet_position = string.format("%s %s", t.fm("Position:", "l"), t.fm(position, "m", 1))
 	local pet_distance = string.format("%s %s", t.fm("Distance:", "l"), t.fm(distance, "m", 1))
 	local pet_health = string.format("%s %s", t.fm("Health:", "l"), t.fm(health, "m", 1))
-	return string.format("%s\n%s\n%s\n%s\n%s", pet_name, pet_type, pet_position, pet_distance, pet_health)
+	local pet_fetch_plays = string.format("%s %s", t.fm("Fetch Plays:", "l"), t.fm(fetch_plays, "m", 1))
+	return string.format("%s\n%s\n%s\n%s\n%s\n%s", pet_name, pet_type, pet_fetch_plays, pet_position, pet_distance,
+			pet_health)
 end
 
 return pet_lifecycle

@@ -1,4 +1,3 @@
--- TODO: Change recipe requirements and crafting time.
 data:extend({
 	{
 		type = "technology",

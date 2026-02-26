@@ -290,11 +290,11 @@ end
 
 function events.on_built_entity(event)
 	local entity = event.entity
-	
+
 	local memorial_names = {
 		["pet-biter-memorial"] = true,
 		["pet-spitter-memorial"] = true
-	
+
 	}
 	if not memorial_names[entity.name] then return end
 
@@ -302,7 +302,7 @@ function events.on_built_entity(event)
 	local entry = storage.biter_pet[player.index]
 
 	pet_memorial.memorials[entity.unit_number] = {
-		entity = entity,		
+		entity = entity,
 		force = player.force,
 		player_index = event.player_index,
 		bond_level = entry.last_death_bond_level or 1,
@@ -377,4 +377,21 @@ function events.on_gui_switch_state_changed(event)
 	end
 	events.pet_close_gui(event)
 end
+
+local function on_atack_wave_detected(surface, attack_position)
+	for player_index, entry in pairs(storage.biter_pet) do
+		local pet = entry.unit
+		if pet and pet.valid and pet.surface == surface then
+			pet_behavior.pet_senses_danger(player_index, entry, attack_position)
+		end
+	end
+end
+
+function events.on_unit_group_finished_gathering(event)
+	local group = event.group
+	if not (group and group.valid) then return end
+	if not (group.surface and group.position) then return end
+	on_atack_wave_detected(group.surface, group.position)
+end
+
 return events

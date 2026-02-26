@@ -124,6 +124,7 @@ return {
 	THIRST_WAKE_THRESHOLD = 95,
 
 	-- Death.
+	MEMORIAL_BOND_THRESHOLD = 60 * 60 * 60 * 5,
 	PET_REMAINS_MAP = {
 		biter = "pet-biter-remains-placeholder",
 		spitter = "pet-spitter-remains-placeholder"

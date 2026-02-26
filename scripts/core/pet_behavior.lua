@@ -8,6 +8,7 @@ local t = require("scripts.utilities.text_format")
 
 local BM = require("scripts.constants.biters").BITER_MAP
 local BT = require("scripts.constants.thresholds").BEHAVIORAL_THRESHOLDS
+local LC = require("scripts.constants.lifecycle")
 local DC = require("scripts.constants.debug")
 local ES = require("scripts.constants.events")
 
@@ -30,9 +31,7 @@ local function process_intro_notification(player_index, entry)
 	if entry.intro_end_tick and not entry.intro_notification_sent then
 		if now > entry.intro_pet_alert_threshold or DC.DEBUG_BYPASS_INTRO_DELAY then
 			local direction = position_util.get_direction_of_position(player.position, pet.position)
-			if direction then
-				notifications.notify(player, string.format("I heard something to the %s...", direction))
-			end
+			if direction then notifications.notify(player, string.format("I heard something to the %s...", direction)) end
 			entry.intro_notification_sent = true
 			audio.play_global_sound(player, "death-rattle")
 			player.force.chart(pet.surface, {
@@ -116,6 +115,28 @@ function pet_behavior.on_pet_damaged(player_index, entry, event)
 	else
 		pet_modifiers.apply_friendly_fire_modifiers(player_index, entry, "betrayal")
 		pet_state.force_emote(player_index, entry, "scared")
+	end
+end
+
+-- TODO: Orient pet towards attack_position.
+-- TODO: Only detect attacks if not orphaned (this might already be the case, I don't remember.)
+function pet_behavior.pet_senses_danger(player_index, entry, attack_position)
+	local pet = entry.unit
+	if not (pet and pet.valid) then return end
+
+	pet_state.pause(player_index, 300)
+	pet_state.force_emote(player_index, entry, "alert")
+	pet_state.force_emote(player_index, entry, "scared")
+
+	local player = game.get_player(player_index)
+	if not (player and player.valid) then return end
+
+	local distance_squared = position_util.distance_squared(pet.position, player.position)
+	if distance_squared <= LC.GUARD_RADIUS_SQUARED then
+		entry.delayed_commentary = {
+			commentary = "pet_senses_danger",
+			tick_trigger = game.tick + 60
+		}
 	end
 end
 

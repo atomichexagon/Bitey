@@ -2,6 +2,8 @@ local debug = require("scripts.utilities.debug")
 local pet_state = require("scripts.core.pet_state")
 local position_util = require("scripts.utilities.position_util")
 
+local LC = require("scripts.constants.lifecycle")
+
 local ITG = require("scripts.constants.notifications").INVESTIGATION_FLAVOR_TEXT_GENERAL
 local ITS = require("scripts.constants.notifications").INVESTIGATION_FLAVOR_TEXT_SPECIFIC
 local FFT = require("scripts.constants.notifications").FETCH_FLAVOR_TEXT
@@ -13,6 +15,7 @@ local PFT = require("scripts.constants.notifications").PETTING_FLAVOR_TEXT
 local PMS = require("scripts.constants.notifications").PETTING_MODIFIERS_AND_SETTINGS
 local FMF = require("scripts.constants.notifications").FOLLOW_ME_FLAVOR_TEXT
 local NOS = require("scripts.constants.notifications").NOTIFICATION_SETTINGS
+local PSD = require("scripts.constants.notifications").PET_SENSES_DANGER_FLAVOR_TEXT
 
 local notifications = {}
 
@@ -139,7 +142,17 @@ end
 local function lazy_guard_flavor_text(player, entry)
 	if not (player and player.valid) then return end
 	if not can_show_flavor(entry) then return end
+	local name = entry.pet_given_name or LC.PET_DEFAULT_NAME or "Bitey"
 	local message = LGT[math.random(#LGT)]
+	notifications.notify(player, message)
+end
+
+local function pet_sense_danger_flavor_text(player, entry)
+	if not (player and player.valid) then return end
+	if not can_show_flavor(entry) then return end
+	local raw_message = PSD[math.random(#PSD)]
+	local pet_name = entry.pet_given_name or LC.PET_DEFAULT_NAME or "Bitey"
+	local message = raw_message:gsub("#NAME#", pet_name)
 	notifications.notify(player, message)
 end
 
@@ -176,17 +189,22 @@ function notifications.petting_biter_flavor_text(player, entry)
 	end
 end
 
-function notifications.process_delayed_commentary(player, entry)
+function notifications.process_delayed_commentary(player_index, entry)
 	if not entry.delayed_commentary then return end
-	if not can_show_flavor(entry) then return end
 
+	local player = game.get_player(player_index)
+	if not (player and player.valid) then return end
+
+	local now = game.tick
 	local commentary_table = entry.delayed_commentary
-	if commentary_table.commentary == "lazy_guard" then
-		local now = game.tick
-		if now >= commentary_table.tick_trigger then
-			entry.delayed_commentary = nil
+
+	if now >= commentary_table.tick_trigger then
+		if commentary_table.commentary == "lazy_guard" then
 			lazy_guard_flavor_text(player, entry)
+		elseif commentary_table.commentary == "pet_senses_danger" then
+			pet_sense_danger_flavor_text(player, entry)
 		end
+		entry.delayed_commentary = nil
 	end
 end
 

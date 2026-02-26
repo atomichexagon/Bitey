@@ -96,6 +96,18 @@ local LAZY_GUARD_FLAVOR_TEXT = {
 	"Shameful..."
 }
 
+local PET_SENSES_DANGER_FLAVOR_TEXT = {
+	"#NAME# seems agitated...",
+	"#NAME#'s acting strangely...",
+	"Something's wrong...",
+	"#NAME#? What's wrong buddy?",
+	"You hear something, #NAME#?",
+	"Something's got #NAME# frightened...",
+	"#NAME# seems afraid...",
+	"#NAME# seems worried...",
+	"#NAME# senses something..."
+}
+
 local PETTING_FLAVOR_TEXT = {
 	"Who's a good boy?",
 	"Easy, little buddy.",
@@ -142,5 +154,6 @@ return {
 	GUARD_FLAVOR_TEXT_SPECIFIC = GUARD_FLAVOR_TEXT_SPECIFIC,
 	LAZY_GUARD_FLAVOR_TEXT = LAZY_GUARD_FLAVOR_TEXT,
 	PETTING_MODIFIERS_AND_SETTINGS = PETTING_MODIFIERS_AND_SETTINGS,
-	PETTING_FLAVOR_TEXT = PETTING_FLAVOR_TEXT
+	PETTING_FLAVOR_TEXT = PETTING_FLAVOR_TEXT,
+	PET_SENSES_DANGER_FLAVOR_TEXT = PET_SENSES_DANGER_FLAVOR_TEXT
 }
