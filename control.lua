@@ -12,10 +12,7 @@ local pet_filter = require("scripts.utilities.event_filters").pet_filter
 local tree_filter = require("scripts.utilities.event_filters").tree_filter
 
 local death_filter = pet_filter
-table.insert(death_filter, {
-	filter = "type",
-	type = "tree"
-})
+table.insert(death_filter, tree_filter)
 
 local function register_runtime_events()
 	script.on_event(defines.events.on_cutscene_cancelled, events.on_cutscene_cancelled)
@@ -39,19 +36,19 @@ local function register_runtime_events()
 	script.on_event("pet-open-gui", events.pet_open_gui)
 end
 
-script.on_nth_tick(2, function(event)
+script.on_nth_tick(4, function(event)
 	pet_animation.animate_pet_reaction_icon()
 end)
 
-script.on_nth_tick(15, function(event)
+script.on_nth_tick(17, function(event)
 	pet_memorial.on_tick(event)
 end)
 
-script.on_nth_tick(30, function(event)
+script.on_nth_tick(29, function(event)
 	pet_lifecycle.on_tick(event)
 end)
 
-script.on_nth_tick(3600, function(event)
+script.on_nth_tick(3601, function(event)
 	pet_init.check_existing_research(event)
 end)
 

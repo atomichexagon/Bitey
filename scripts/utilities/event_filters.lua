@@ -311,9 +311,13 @@ local remains_filter = {
 	}
 }
 
+local tree_filter = {
+	filter = "type",
+	type = "tree"
+}
+
 return {
 	pet_filter = pet_filter,
 	memorial_filter = memorial_filter,
-	remains_filter = remains_filter,
-	tree_filter = tree_filter
+	remains_filter = remains_filter
 }

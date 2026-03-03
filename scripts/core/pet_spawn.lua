@@ -86,7 +86,7 @@ function pet_spawn.spawn_orphan_baby(player, entry, generate_decoratives)
 end
 
 function pet_spawn.spawn_pet_for_player(player_index, player, entry)
-
+	game.print("test")
 	-- Assume that if unit is nil and it was preivously alive then it's a lost pet.
 	local tier = entry.biter_tier or "pet-small-biter-baby"
 	debug.info(string.format("Recovering lost pet %s", t.f(tier, "f")))

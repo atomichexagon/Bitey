@@ -3,6 +3,9 @@ local pet_state = require("scripts.core.pet_state")
 
 local PET_VISUALS_CONSTANTS = require("scripts.constants.visuals")
 local RENDER_SETTINGS = PET_VISUALS_CONSTANTS.RENDER_SETTINGS
+local EMOTE_LIGHT_FADE_RATE = RENDER_SETTINGS.EMOTE_LIGHT_FADE_RATE
+local EMOTE_FADE_RATE = RENDER_SETTINGS.EMOTE_FADE_RATE
+local EMOTE_FORCED_MODIFIER = RENDER_SETTINGS.EMOTE_FORCED_MODIFIER
 
 local pet_animation = {}
 
@@ -16,13 +19,13 @@ function pet_animation.animate_pet_reaction_icon()
 			table.remove(pet_emote_queue, i)
 		else
 			local age = game.tick - sprite_render.start_tick
-			local decremented_value = math.max(0, sprite_render.sprite.color.a - age * RENDER_SETTINGS.EMOTE_FADE_RATE)
+			local decremented_value = math.max(0, sprite_render.sprite.color.a - age * EMOTE_FADE_RATE)
 			local decremented_light_value = math.max(0,
-					sprite_render.light.intensity - age * RENDER_SETTINGS.EMOTE_LIGHT_FADE_RATE)
+					sprite_render.light.intensity - age * EMOTE_FADE_RATE)
 
 			if sprite_render.fast_render then
-				decremented_value = decremented_value / RENDER_SETTINGS.EMOTE_FORCED_MODIFIER
-				decremented_light_value = decremented_light_value / RENDER_SETTINGS.EMOTE_FORCED_MODIFIER
+				decremented_value = decremented_value / EMOTE_FORCED_MODIFIER
+				decremented_light_value = decremented_light_value / EMOTE_FORCED_MODIFIER
 			end
 
 			sprite_render.sprite.color = {
