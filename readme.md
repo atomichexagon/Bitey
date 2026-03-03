@@ -1,8 +1,7 @@
-# Bitey
+![bitey](bitey.png)
 
 Bitey is Factorio mod that introduces a pet biter companion to the game. Bitey will follow you, assist in combat, react to the world, grow over time, and express its personality through emotes.
 
-![bitey](bitey.png)
 
 ---
 
@@ -22,8 +21,6 @@ Bitey is Factorio mod that introduces a pet biter companion to the game. Bitey w
 
 3. Launch Factorio and enable the mod in the Mods menu.
 
----
-
 ## Compatibility
 
 - Compatible with **Factorio 2.0+**.
@@ -31,13 +28,9 @@ Bitey is Factorio mod that introduces a pet biter companion to the game. Bitey w
 - Might work in multi-player? (Currently untested).
 - Should be compatible with most mods.
 
----
-
 ## Known Issues
 
 - Bitey may occasionally get stuck on complex terrain; it will teleport to the player if separated for too long.
-
----
 
 ## License
 
