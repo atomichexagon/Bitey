@@ -6,7 +6,7 @@
 
 ## Installation
 
-1. Download the latest release from the **Releases** page.
+1. [Download](https://github.com/PwProjects/Bitey/releases/latest/download/biter-pet_0.26.2902.zip) the latest release from the **Releases** page.
 2. Place the .zip file into your Factorio mods directory:
 
    **Windows:**  
