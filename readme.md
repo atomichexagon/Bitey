@@ -6,7 +6,7 @@
 
 ## Installation
 
-1. [Download](https://github.com/PwProjects/Bitey/releases/latest/download/biter-pet_0.26.2902.zip) the latest release from the **Releases** page.
+1. [Download](https://github.com/PwProjects/Bitey/releases/latest/download/biter-pet_0.26.2902.zip) the latest release.
 2. Place the .zip file into your Factorio mods directory:
 
    **Windows:**  
@@ -22,12 +22,16 @@
 
 ## Compatibility
 
-- Compatible with **Factorio 2.0+**.
-- Works on my machine.
-- It might work in multi-player? (Currently untested).
+- Compatible with **Factorio 2.0+**
+- It works on my machine.
+- Might work in multi-player? (Currently untested).
 - Should be compatible with most mods (I hope).
 
 ## License
 
 This mod is released under the **MIT License**.  
 You are free to modify, distribute, and include it in modpacks with attribution.
+
+## Support
+If you'd like to buy me a coffee, you can do so here:
+https://ko-fi.com/spookynutz
