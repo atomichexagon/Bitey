@@ -25,6 +25,7 @@ local function make_pet_variant(base, name)
 	local scale_factor = SCALE[name]
 	local pet = table.deepcopy(data.raw.unit[base])
 	pet.name = name
+	pet.ai_settings = nil
 
 	local function scale_layer(layer)
 		layer.tint = {
@@ -128,6 +129,7 @@ local function make_idle_variant(active_table, idle_name, speed_multiplier)
 
 	base.name = idle_name
 	base.movement_speed = (base.movement_speed or 0.1) * speed_multiplier
+	base.ai_settings = nil
 
 	local function adjust_animation(anim)
 		if not anim then return end
